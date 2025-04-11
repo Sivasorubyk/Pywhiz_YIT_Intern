@@ -53,6 +53,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -60,23 +61,26 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+   
 ]
 
 # JWT Configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'user.authentication.CookieJWTAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=259200),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=100),
     'AUTH_COOKIE': 'access_token',
+    'AUTH_COOKIE_REFRESH': 'refresh_token',
     'AUTH_COOKIE_SECURE': False,
     'AUTH_COOKIE_HTTP_ONLY': True,
     'AUTH_COOKIE_SAMESITE': 'Lax',
+    'AUTH_HEADER_TYPES': ('Bearer',), 
 }
 
 ROOT_URLCONF = 'backend.urls'
@@ -131,8 +135,9 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # From .env
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # From .env
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    # "http://localhost:3000",
+    "http://localhost:5173",
+    # "http://127.0.0.1:3000",
     "http://localhost:8000",
 ]
 CORS_ALLOW_CREDENTIALS = True
