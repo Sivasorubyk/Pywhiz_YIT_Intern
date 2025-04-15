@@ -31,22 +31,84 @@ import ExercisePage7 from "./pages/ExercisePage7"
 import LearnPage8 from "./pages/LearnPage8"
 import CodePage8 from "./pages/CodePage8"
 import ExercisePage8 from "./pages/ExercisePage8"
+import DashboardPage from "./pages/DashboardPage"
+import PersonalizedExercisesPage from "./pages/PersonalizedExercisesPage"
 import ContactPage from "./pages/ContactPage"
 import Layout from "./components/Layout"
 import ProtectedRoute from "./components/ProtectedRoute"
 
 function App() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user, isLoading } = useAuth()
+
+  // Redirect to appropriate milestone based on user progress
+  const redirectToCurrentMilestone = () => {
+    if (!user) return <Navigate to="/login" />
+
+    // If user has completed all milestones, go to personalized exercises
+    if (user.currentMilestone > 8) {
+      return <Navigate to="/personalized-exercises" />
+    }
+
+    // Get the milestone routes
+    const milestoneRoutes = ["/learn", "/learn2", "/learn3", "/learn4", "/learn5", "/learn6", "/learn7", "/learn8"]
+
+    // Get the current milestone from user or localStorage
+    const currentMilestone = user.currentMilestone || Number(localStorage.getItem("currentMilestone")) || 1
+
+    // Check if there's a more specific page to continue from
+    // This allows resuming from code or exercise pages
+    const lastPage = localStorage.getItem("lastVisitedPage")
+    if (lastPage) {
+      return <Navigate to={lastPage} />
+    }
+
+    // Otherwise go to the current milestone's learn page
+    return <Navigate to={milestoneRoutes[currentMilestone - 1] || "/learn"} />
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#10b3b3]"></div>
+      </div>
+    )
+  }
 
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
-        <Route path="login" element={isAuthenticated ? <Navigate to="/" /> : <LoginPage />} />
-        <Route path="signup" element={isAuthenticated ? <Navigate to="/" /> : <SignupPage />} />
-        <Route path="verify-otp" element={isAuthenticated ? <Navigate to="/" /> : <VerifyOtpPage />} />
-        <Route path="forgot-password" element={isAuthenticated ? <Navigate to="/" /> : <ForgotPasswordPage />} />
+        <Route path="login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />} />
+        <Route path="signup" element={isAuthenticated ? <Navigate to="/dashboard" /> : <SignupPage />} />
+        <Route path="verify-otp" element={isAuthenticated ? <Navigate to="/dashboard" /> : <VerifyOtpPage />} />
+        <Route
+          path="forgot-password"
+          element={isAuthenticated ? <Navigate to="/dashboard" /> : <ForgotPasswordPage />}
+        />
         <Route path="contact" element={<ContactPage />} />
+
+        {/* Dashboard */}
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Continue Learning - redirects to appropriate milestone */}
+        <Route path="continue" element={<ProtectedRoute>{redirectToCurrentMilestone()}</ProtectedRoute>} />
+
+        {/* Personalized Exercises */}
+        <Route
+          path="personalized-exercises"
+          element={
+            <ProtectedRoute>
+              <PersonalizedExercisesPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Milestone 1 Protected Routes */}
         <Route
@@ -126,7 +188,7 @@ function App() {
           }
         />
 
-        {/* Milestone 4 Protected Routes */}
+        {/* Milestone 4-8 Protected Routes */}
         <Route
           path="learn4"
           element={
@@ -152,7 +214,6 @@ function App() {
           }
         />
 
-        {/* Milestone 5 Protected Routes */}
         <Route
           path="learn5"
           element={
@@ -178,7 +239,6 @@ function App() {
           }
         />
 
-        {/* Milestone 6 Protected Routes */}
         <Route
           path="learn6"
           element={
@@ -204,7 +264,6 @@ function App() {
           }
         />
 
-        {/* Milestone 7 Protected Routes */}
         <Route
           path="learn7"
           element={
@@ -230,7 +289,6 @@ function App() {
           }
         />
 
-        {/* Milestone 8 Protected Routes */}
         <Route
           path="learn8"
           element={
@@ -255,6 +313,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Catch all route */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   )

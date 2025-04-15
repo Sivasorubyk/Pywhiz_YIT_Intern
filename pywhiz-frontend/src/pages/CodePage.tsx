@@ -1,18 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import api from "../services/api"
 import { Volume2, VolumeX, AlertCircle, CheckCircle } from "lucide-react"
 
-// interface CodeSubmission {
-//   id: number
-//   code: string
-//   output: string
-//   hints: string
-//   suggestions: string
-//   created_at: string
-// }
+interface CodeSubmission {
+  id: number
+  code: string
+  output: string
+  hints: string
+  suggestions: string
+  created_at: string
+}
 
 const CodePage = () => {
   const navigate = useNavigate()
@@ -24,6 +24,8 @@ const CodePage = () => {
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState("")
   const [isMuted, setIsMuted] = useState(false)
+  // Add state to track if code has been successfully run
+  const [hasRunSuccessfully, setHasRunSuccessfully] = useState<boolean>(false)
 
   // Hardcoded lesson data since there's no API for this
   const lessonData = {
@@ -32,6 +34,30 @@ const CodePage = () => {
       "In this lesson, we will explore the basics of Python, one of the most popular programming languages. You'll learn about variables, data types, and simple operations. By the end of this lesson, you'll be able to write your first Python program and understand how it runs.",
   }
 
+  // Define MILESTONE_ID or import it
+  const MILESTONE_ID = "intro_python" // Example value, replace with actual value or import
+
+  // Add useEffect to track last visited page
+  useEffect(() => {
+    // Store the current page as the last visited page
+    localStorage.setItem("lastVisitedPage", "/code")
+
+    // Check if code was previously completed successfully
+    const wasSuccessful = localStorage.getItem(`code_${MILESTONE_ID}_success`)
+    if (wasSuccessful === "true") {
+      setIsSuccess(true)
+    }
+  }, [])
+
+  // Add useEffect to check localStorage for successful run
+  useEffect(() => {
+    const hasSuccess = localStorage.getItem(`code_${MILESTONE_ID}_success`)
+    if (hasSuccess === "true") {
+      setIsSuccess(true)
+    }
+  }, [])
+
+  // Modify handleRunCode to store success state
   const handleRunCode = async () => {
     setIsRunning(true)
     setOutput("")
@@ -54,6 +80,9 @@ const CodePage = () => {
 
       // If we got a response without errors, consider it successful
       setIsSuccess(true)
+
+      // Store success in localStorage
+      localStorage.setItem(`code_${MILESTONE_ID}_success`, "true")
     } catch (err: any) {
       console.error("Error submitting code:", err)
       setError(err.response?.data?.detail || "Error running code. Please try again.")
@@ -80,7 +109,7 @@ const CodePage = () => {
               <div className="flex items-center">
                 <div className="flex-shrink-0 mr-4">
                   <img
-                    src="/images/speaking.gif"
+                    src="/images/ai-assistant.png"
                     alt="AI Assistant"
                     className="w-16 h-16 rounded-full"
                     onError={(e) => {
@@ -187,6 +216,25 @@ const CodePage = () => {
           </div>
         </div>
       </div>
+      {isSuccess && (
+        <div className="fixed bottom-4 right-4 z-40 bg-white rounded-lg shadow-lg p-2 max-w-xs animate-bounce">
+          <div className="flex items-center">
+            <img
+              src="/images/coding-success.gif"
+              alt="Code success!"
+              className="w-16 h-16 rounded-md mr-2"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.src = "/placeholder.svg?height=80&width=80"
+              }}
+            />
+            <div>
+              <p className="font-bold text-[#003366]">Code success!</p>
+              <p className="text-sm text-gray-600">You're becoming a Python pro!</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

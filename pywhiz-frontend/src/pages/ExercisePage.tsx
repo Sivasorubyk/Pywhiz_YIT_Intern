@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Volume2, VolumeX, CheckCircle, AlertCircle } from "lucide-react"
 import confetti from "canvas-confetti"
@@ -61,6 +61,22 @@ const ExercisePage = () => {
     milestone: 1,
   }
 
+  // Add constant for milestone ID
+  const MILESTONE_ID = 2 // After completing milestone 1, user progresses to milestone 2
+
+  // Add useEffect to check localStorage for completed state
+  useEffect(() => {
+    // Store the current page as the last visited page
+    localStorage.setItem("lastVisitedPage", "/exercise")
+
+    // Check if exercise was previously completed
+    const wasCompleted = localStorage.getItem(`exercise_${MILESTONE_ID - 1}_completed`)
+    if (wasCompleted === "true") {
+      setShowResults(true)
+      setMilestoneAchieved(true)
+    }
+  }, [])
+
   const handleAnswerChange = (questionId: number, value: string) => {
     setAnswers((prev) => ({
       ...prev,
@@ -85,6 +101,10 @@ const ExercisePage = () => {
 
     if (allCorrect) {
       setMilestoneAchieved(true)
+
+      // Store completion in localStorage
+      localStorage.setItem(`exercise_${MILESTONE_ID - 1}_completed`, "true")
+
       // Trigger confetti effect
       confetti({
         particleCount: 100,
@@ -145,6 +165,26 @@ const ExercisePage = () => {
             <div>
               <h3 className="font-bold">Congratulations!</h3>
               <p>You've reached Milestone 1! Keep up the great work.</p>
+            </div>
+          </div>
+        )}
+
+        {milestoneAchieved && (
+          <div className="fixed bottom-4 right-4 z-40 bg-white rounded-lg shadow-lg p-2 max-w-xs animate-bounce">
+            <div className="flex items-center">
+              <img
+                src="/images/milestone-complete.gif"
+                alt="Milestone complete!"
+                className="w-16 h-16 rounded-md mr-2"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.src = "/placeholder.svg?height=80&width=80"
+                }}
+              />
+              <div>
+                <p className="font-bold text-[#003366]">Milestone complete!</p>
+                <p className="text-sm text-gray-600">You're making amazing progress!</p>
+              </div>
             </div>
           </div>
         )}

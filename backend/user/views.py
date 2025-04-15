@@ -15,6 +15,8 @@ from .serializers import (
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -170,3 +172,62 @@ class PasswordResetView(APIView):
             return Response({'message': 'Password reset successfully'}, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid or expired OTP'}, status=status.HTTP_400_BAD_REQUEST)
+
+# Add this new class to your views.py file
+class CookieTokenRefreshView(TokenRefreshView):
+    """
+    Custom token refresh view that gets the token from cookies
+    instead of requiring it in the post body.
+    """
+    def post(self, request, *args, **kwargs):
+        # Get refresh token from cookie
+        refresh_token = request.COOKIES.get('refresh_token')
+        
+        if refresh_token is None:
+            return Response(
+                {"detail": "Refresh token not found in cookies."}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+            
+        # Create a request with the refresh token in the body
+        # Check if request.data is mutable
+        if hasattr(request.data, '_mutable'):
+            request.data._mutable = True
+            request.data['refresh'] = refresh_token
+            request.data._mutable = False
+        else:
+            # If it's not a QueryDict, create a new one
+            from django.http import QueryDict
+            data = QueryDict('', mutable=True)
+            data.update(request.data)
+            data['refresh'] = refresh_token
+            request.data = data
+        
+        try:
+            # Call the parent class's post method
+            response = super().post(request, *args, **kwargs)
+            
+            if response.status_code == 200:
+                # Get the new access token
+                access_token = response.data.get('access')
+                
+                # Set the new access token in the cookie
+                response.set_cookie(
+                    'access_token',
+                    access_token,
+                    httponly=True,
+                    samesite='Lax',
+                    secure=not settings.DEBUG  # Secure in production
+                )
+                
+                # Remove the access token from the response body for security
+                if 'access' in response.data:
+                    del response.data['access']
+                
+            return response
+            
+        except (InvalidToken, TokenError) as e:
+            return Response(
+                {"detail": str(e)}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
