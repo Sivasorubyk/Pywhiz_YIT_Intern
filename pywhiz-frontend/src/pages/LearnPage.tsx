@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { Play, Pause, Volume2, Maximize2, VolumeX, Award } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import confetti from "canvas-confetti"
 
 const LearnPage = () => {
   const navigate = useNavigate()
+  const { milestoneId } = useParams<{ milestoneId?: string }>()
   const { user, updateUserProgress, addScore, addBadge } = useAuth()
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -17,17 +18,150 @@ const LearnPage = () => {
   const [duration, setDuration] = useState(0)
   const [showBadgeAnimation, setShowBadgeAnimation] = useState(false)
 
-  // Video ID for this milestone
-  const MILESTONE_ID = 1
-  const VIDEO_ID = 1001
+  // Default to milestone 1 if no parameter is provided
+  const currentMilestone = milestoneId ? Number.parseInt(milestoneId) : 1
+  const VIDEO_ID = 1000 + currentMilestone
 
-  // Hardcoded lesson data since there's no API for this
-  const lessonData = {
-    title: "Introduction to Python",
-    description:
-      "In this lesson, we will explore the basics of Python, one of the most popular programming languages. You'll learn about variables, data types, and simple operations. By the end of this lesson, you'll be able to write your first Python program and understand how it runs.",
-    videoUrl: "/videos/intro.mp4", // This should be your actual video path
-  }
+  // Milestone content data
+  const milestonesData = [
+    {
+      id: 1,
+      title: "Introduction to Python",
+      description:
+        "In this lesson, we will explore the basics of Python, one of the most popular programming languages. You'll learn about syntax, comments, and user input. By the end of this lesson, you'll be able to write your first Python program and understand how it runs.",
+      videoUrl: "/videos/intro.mp4",
+      funFact:
+        "Python was named after the British comedy group Monty Python, not the snake! The creator, Guido van Rossum, was a fan of Monty Python's Flying Circus.",
+    },
+    {
+      id: 2,
+      title: "Python Variables",
+      description:
+        "In this lesson, you'll learn about variables in Python. Variables are containers for storing data values. You'll learn how to create, name, and use variables in your Python programs.",
+      videoUrl: "/videos/variables.mp4",
+      funFact:
+        "In Python, you don't need to declare variable types explicitly. Python automatically determines the variable type based on the assigned value!",
+    },
+    {
+      id: 3,
+      title: "Python Data Types",
+      description:
+        "This lesson covers Python's built-in data types including numbers, strings, and booleans. You'll learn how to work with different types of data and convert between them.",
+      videoUrl: "/videos/datatypes.mp4",
+      funFact: "Python has a special data type called 'None' which represents the absence of a value or a null value.",
+    },
+    {
+      id: 4,
+      title: "Python Operators",
+      description:
+        "Learn about Python's operators for performing operations on variables and values. This includes arithmetic, comparison, logical, and assignment operators.",
+      videoUrl: "/videos/operators.mp4",
+      funFact:
+        "Python uses the '**' operator for exponentiation. For example, 2**3 equals 8 (2 raised to the power of 3).",
+    },
+    {
+      id: 5,
+      title: "Python If-Else Statements",
+      description:
+        "This lesson teaches you how to make decisions in your code using if, elif, and else statements. You'll learn how to create conditional logic in your programs.",
+      videoUrl: "/videos/ifelse.mp4",
+      funFact:
+        "Python uses indentation to define code blocks instead of curly braces {} like many other programming languages.",
+    },
+    {
+      id: 6,
+      title: "Python For Loops",
+      description:
+        "Learn how to use for loops to iterate over sequences like lists, tuples, and strings. This lesson will teach you how to repeat actions efficiently in your code.",
+      videoUrl: "/videos/forloops.mp4",
+      funFact:
+        "Python's for loops are actually 'for-each' loops that iterate over items in a sequence, rather than incrementing a counter variable.",
+    },
+    {
+      id: 7,
+      title: "Python While Loops",
+      description:
+        "This lesson covers while loops, which execute a block of code as long as a condition is true. You'll learn when to use while loops and how to avoid infinite loops.",
+      videoUrl: "/videos/whileloops.mp4",
+      funFact:
+        "Python has a special 'else' clause for loops that executes when the loop condition becomes false, but not when the loop is terminated by a break statement.",
+    },
+    {
+      id: 8,
+      title: "Python Functions",
+      description:
+        "Learn how to create and use functions in Python. Functions help you organize your code into reusable blocks, making your programs more modular and easier to understand.",
+      videoUrl: "/videos/functions.mp4",
+      funFact:
+        "In Python, functions are 'first-class citizens', which means they can be passed as arguments to other functions, returned from functions, and assigned to variables.",
+    },
+    {
+      id: 9,
+      title: "Python Arrays",
+      description:
+        "This lesson introduces arrays in Python. You'll learn how to create, access, and manipulate arrays to store collections of items.",
+      videoUrl: "/videos/arrays.mp4",
+      funFact:
+        "Python doesn't have built-in array data structures, but it has lists which are more versatile. For true arrays, Python programmers use the NumPy library.",
+    },
+    {
+      id: 10,
+      title: "Python Math",
+      description:
+        "Learn about Python's math module and how to perform mathematical operations. This lesson covers basic arithmetic, mathematical functions, and constants.",
+      videoUrl: "/videos/math.mp4",
+      funFact:
+        "Python's math module includes a constant for pi (math.pi) that gives you the value of π to 15 decimal places!",
+    },
+    {
+      id: 11,
+      title: "Python Lists",
+      description:
+        "This lesson covers Python lists in depth. You'll learn how to create, access, modify, and iterate through lists, as well as common list methods and operations.",
+      videoUrl: "/videos/lists.mp4",
+      funFact:
+        "Python lists can contain items of different types. You can mix integers, strings, and even other lists within a single list!",
+    },
+    {
+      id: 12,
+      title: "Python Tuples",
+      description:
+        "Learn about tuples in Python. Tuples are similar to lists but are immutable, meaning they cannot be changed after creation. You'll learn when and why to use tuples.",
+      videoUrl: "/videos/tuples.mp4",
+      funFact:
+        "A tuple with just one item needs a trailing comma, like (1,). Without the comma, Python treats it as a regular number in parentheses.",
+    },
+    {
+      id: 13,
+      title: "Python Sets",
+      description:
+        "This lesson introduces sets in Python. Sets are unordered collections of unique items. You'll learn how to create and use sets for tasks like removing duplicates.",
+      videoUrl: "/videos/sets.mp4",
+      funFact:
+        "Python sets implement mathematical set operations like union, intersection, and difference, making them perfect for comparing collections of data.",
+    },
+    {
+      id: 14,
+      title: "Python Dictionaries",
+      description:
+        "Learn about dictionaries in Python. Dictionaries store data as key-value pairs, allowing you to quickly look up values using keys. This lesson covers creating, accessing, and modifying dictionaries.",
+      videoUrl: "/videos/dictionaries.mp4",
+      funFact:
+        "As of Python 3.7, dictionaries maintain the order of items as they are inserted. In earlier versions, dictionaries were unordered.",
+    },
+    {
+      id: 15,
+      title: "Python File Handling",
+      description:
+        "This final lesson teaches you how to work with files in Python. You'll learn how to read from and write to files, which is essential for data processing and storage.",
+      videoUrl: "/videos/filehandling.mp4",
+      funFact:
+        "Python's 'with' statement automatically takes care of closing files for you, even if errors occur during file operations. This is called context management.",
+    },
+  ]
+
+  // Get current milestone data
+  const lessonData = milestonesData.find((m) => m.id === currentMilestone) || milestonesData[0]
 
   // Check if video was previously completed
   useEffect(() => {
@@ -41,13 +175,13 @@ const LearnPage = () => {
     if (isWatched === "true") {
       setVideoWatched(true)
     }
-  }, [user])
+  }, [user, VIDEO_ID])
 
   // Add useEffect to track last visited page
   useEffect(() => {
     // Store the current page as the last visited page
-    localStorage.setItem("lastVisitedPage", "/learn")
-  }, [])
+    localStorage.setItem("lastVisitedPage", `/learn${currentMilestone > 1 ? currentMilestone : ""}`)
+  }, [currentMilestone])
 
   // Handle video events
   const handleTimeUpdate = () => {
@@ -63,13 +197,13 @@ const LearnPage = () => {
 
         // Update user progress
         if (user) {
-          updateUserProgress(MILESTONE_ID, VIDEO_ID)
+          updateUserProgress(currentMilestone, VIDEO_ID)
 
           // Add points for completing the video
           addScore(10)
 
           // If this is the first video, award a badge
-          if (!user.badges.includes("First Step")) {
+          if (currentMilestone === 1 && !user.badges.includes("First Step")) {
             addBadge("First Step")
             setShowBadgeAnimation(true)
 
@@ -124,7 +258,7 @@ const LearnPage = () => {
   }
 
   const handleNextClick = () => {
-    navigate("/code")
+    navigate(`/code${currentMilestone > 1 ? currentMilestone : ""}`)
   }
 
   return (
@@ -132,7 +266,7 @@ const LearnPage = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-4 flex items-center justify-between">
           <span className="inline-block bg-[#10b3b3] text-white px-4 py-1 rounded-full text-sm font-medium">
-            Milestone 1
+            Milestone {currentMilestone}
           </span>
 
           <button onClick={() => navigate("/dashboard")} className="text-[#10b3b3] hover:text-[#0d9999] font-medium">
@@ -205,8 +339,7 @@ const LearnPage = () => {
               {/* Fun fact box */}
               <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                 <p className="text-sm text-gray-700">
-                  <span className="font-bold">Fun Fact:</span> Python is one of the most popular programming languages
-                  in the world! It's used by companies like Google, Netflix, and NASA.
+                  <span className="font-bold">Fun Fact:</span> {lessonData.funFact}
                 </p>
               </div>
             </div>
