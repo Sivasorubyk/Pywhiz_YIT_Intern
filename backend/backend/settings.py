@@ -32,7 +32,9 @@ INSTALLED_APPS = [
     'corsheaders',
     'user',
     'contact',
-    'code_practice',
+    # 'code_practice',
+    'learn',
+
 ]
 
 MIDDLEWARE = [
@@ -58,7 +60,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Shorter for better security
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=24*7*60),  # Shorter for better security
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_REFRESH': 'refresh_token',

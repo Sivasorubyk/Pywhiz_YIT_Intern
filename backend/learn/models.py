@@ -1,0 +1,121 @@
+from django.db import models
+from user.models import User
+import uuid
+
+class Milestone(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=100)
+    description = models.TextField()
+    order = models.PositiveIntegerField(unique=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"{self.order}. {self.title}"
+
+class LearnContent(models.Model):
+    milestone = models.ForeignKey(Milestone, on_delete=models.CASCADE, related_name='learn_contents')
+    video_url = models.URLField()
+    audio_url = models.URLField(blank=True, null=True)
+    transcript = models.TextField()
+    additional_resources = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Learn Content for {self.milestone.title}"
+
+class CodeQuestion(models.Model):
+    milestone = models.ForeignKey(Milestone, on_delete=models.CASCADE, related_name='code_questions')
+    question = models.TextField()
+    example_code = models.TextField(blank=True)
+    hint = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Code Question for {self.milestone.title}"
+
+class UserCodeAnswer(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='code_answers')
+    question = models.ForeignKey(CodeQuestion, on_delete=models.CASCADE)
+    user_code = models.TextField()
+    output = models.TextField(blank=True)
+    hints = models.TextField(blank=True)
+    suggestions = models.TextField(blank=True)
+    is_correct = models.BooleanField(default=False)
+    attempts = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'question')
+
+    def __str__(self):
+        return f"{self.user.email}'s answer to {self.question.id}"
+
+class MCQQuestion(models.Model):
+    milestone = models.ForeignKey(Milestone, on_delete=models.CASCADE, related_name='mcq_questions')
+    question_text = models.TextField()
+    options = models.JSONField()  # Format: {'A': 'Option 1', 'B': 'Option 2', ...}
+    correct_answer = models.CharField(max_length=1)  # Stores the correct option key (e.g., 'A', 'B')
+    explanation = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order']
+        unique_together = ('milestone', 'order')
+
+    def __str__(self):
+        return f"MCQ Question {self.order} for {self.milestone.title}"
+
+class UserMCQAnswer(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mcq_answers')
+    question = models.ForeignKey(MCQQuestion, on_delete=models.CASCADE)
+    selected_option = models.CharField(max_length=1)
+    is_correct = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'question')
+
+    def __str__(self):
+        return f"{self.user.email}'s answer to MCQ {self.question.id}"
+
+class UserProgress(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='progress')
+    current_milestone = models.ForeignKey(Milestone, on_delete=models.SET_NULL, null=True)
+    completed_milestones = models.ManyToManyField(Milestone, related_name='completed_by', blank=True)
+    score = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.email}'s Progress"
+
+class PersonalizedExercise(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='personalized_exercises')
+    question = models.TextField()
+    generated_code = models.TextField(blank=True)
+    difficulty = models.CharField(max_length=20, choices=[
+        ('easy', 'Easy'),
+        ('medium', 'Medium'),
+        ('hard', 'Hard')
+    ], default='easy')
+    output = models.TextField(blank=True)
+    hints = models.TextField(blank=True)
+    suggestions = models.TextField(blank=True)
+    is_completed = models.BooleanField(default=False)
+    attempts = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Personalized Exercise for {self.user.email}"
