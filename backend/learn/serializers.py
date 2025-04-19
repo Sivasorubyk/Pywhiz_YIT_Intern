@@ -48,11 +48,28 @@ class UserProgressSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     current_milestone = MilestoneSerializer(read_only=True)
     completed_milestones = MilestoneSerializer(many=True, read_only=True)
+    watched_videos = serializers.SerializerMethodField()
+    completed_code = serializers.SerializerMethodField()
+    completed_exercises = serializers.SerializerMethodField()
     
     class Meta:
         model = UserProgress
-        fields = '__all__'
-        read_only_fields = ('user', 'score', 'completed_milestones')
+        fields = [
+            'user', 'current_milestone', 'completed_milestones',
+            'watched_videos', 'completed_code', 'completed_exercises',
+            'score', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ('user', 'score', 'completed_milestones',
+                           'watched_videos', 'completed_code', 'completed_exercises')
+    
+    def get_watched_videos(self, obj):
+        return [milestone.id for milestone in obj.watched_videos.all()]
+    
+    def get_completed_code(self, obj):
+        return [milestone.id for milestone in obj.completed_code.all()]
+    
+    def get_completed_exercises(self, obj):
+        return [milestone.id for milestone in obj.completed_exercises.all()]
 
 class PersonalizedExerciseSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

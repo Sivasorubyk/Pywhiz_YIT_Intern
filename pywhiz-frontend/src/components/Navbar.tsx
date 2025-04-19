@@ -6,7 +6,7 @@ import { useState } from "react"
 import { Menu, X, User, LogOut } from "lucide-react"
 
 const Navbar = () => {
-  const { isAuthenticated, logout, user } = useAuth()
+  const { isAuthenticated, logout, user, userProgress } = useAuth()
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
@@ -15,6 +15,21 @@ const Navbar = () => {
   const toggleProfile = () => setIsProfileOpen(!isProfileOpen)
 
   const isActive = (path: string) => location.pathname === path
+
+  // Determine the learn link based on user progress
+  const getLearnLink = () => {
+    if (!isAuthenticated || !userProgress) {
+      return "/login" // Redirect to login if not authenticated
+    }
+
+    // If user has a current milestone, direct to that milestone's learn page
+    if (userProgress.current_milestone) {
+      return `/learn/${userProgress.current_milestone.id}`
+    }
+
+    // Fallback to dashboard if no current milestone
+    return "/dashboard"
+  }
 
   return (
     <nav className="bg-[#003366] text-white py-4">
@@ -33,7 +48,7 @@ const Navbar = () => {
               Dashboard
             </Link>
           )}
-          <Link to="/learn" className={`nav-link ${isActive("/learn") ? "active" : ""}`}>
+          <Link to={getLearnLink()} className={`nav-link ${location.pathname.includes("/learn") ? "active" : ""}`}>
             Learn
           </Link>
           <Link to="/contact" className={`nav-link ${isActive("/contact") ? "active" : ""}`}>
@@ -92,8 +107,8 @@ const Navbar = () => {
               </Link>
             )}
             <Link
-              to="/learn"
-              className={`nav-link ${isActive("/learn") ? "active" : ""}`}
+              to={getLearnLink()}
+              className={`nav-link ${location.pathname.includes("/learn") ? "active" : ""}`}
               onClick={() => setIsMenuOpen(false)}
             >
               Learn

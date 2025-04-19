@@ -1,16 +1,35 @@
 "use client"
 
-import { Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
 import { ChevronDown } from "lucide-react"
 import { useState } from "react"
 
 const HomePage = () => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, userProgress } = useAuth()
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null)
+  const navigate = useNavigate()
 
   const toggleFaq = (index: number) => {
     setExpandedFaq(expandedFaq === index ? null : index)
+  }
+
+  // Get the appropriate link for the CTA buttons
+  const getStartLink = () => {
+    if (!isAuthenticated) {
+      return "/signup"
+    }
+
+    if (userProgress && userProgress.current_milestone) {
+      return `/learn/${userProgress.current_milestone.id}`
+    }
+
+    return "/dashboard"
+  }
+
+  // Handle CTA button clicks
+  const handleStartClick = () => {
+    navigate(getStartLink())
   }
 
   // Course topics with fun icons and descriptions
@@ -98,12 +117,12 @@ const HomePage = () => {
               Hey there, future coder! 👋 If you're between 11-15 years old and want to learn Python in a fun and
               interactive way, you're in the right place!
             </p>
-            <Link
-              to={isAuthenticated ? "/learn" : "/signup"}
+            <button
+              onClick={handleStartClick}
               className="btn-primary inline-block text-lg px-8 py-3 rounded-full shadow-lg transform transition-transform duration-300 hover:scale-110 hover:-rotate-2"
             >
               Start Your Coding Adventure! 🚀
-            </Link>
+            </button>
           </div>
 
           <div className="rounded-xl overflow-hidden shadow-lg border-4 border-[#10b3b3]">
@@ -197,12 +216,12 @@ const HomePage = () => {
           <p className="text-xl mb-6 max-w-2xl mx-auto">
             Join thousands of young coders who are learning Python in a fun and interactive way!
           </p>
-          <Link
-            to={isAuthenticated ? "/learn" : "/signup"}
+          <button
+            onClick={handleStartClick}
             className="inline-block bg-white text-[#003366] font-bold text-xl px-8 py-4 rounded-full shadow-lg transform transition-all duration-300 hover:scale-110 hover:bg-yellow-100"
           >
             Get Started! ✨
-          </Link>
+          </button>
         </div>
       </section>
     </div>

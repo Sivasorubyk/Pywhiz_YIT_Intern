@@ -2,19 +2,17 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import api from "../services/api"
+import { fetchUserProgress, updateCurrentMilestone, type UserProgress, type Milestone } from "../services/learnApi"
 
 interface User {
   id: number
   username: string
   email: string
-  currentMilestone: number
-  totalScore: number
-  completedVideos: number[]
-  badges: string[]
 }
 
 interface AuthContextType {
   user: User | null
+  userProgress: UserProgress | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
@@ -23,7 +21,13 @@ interface AuthContextType {
   logout: () => void
   forgotPassword: (email: string) => Promise<void>
   resetPassword: (email: string, otp: string, newPassword: string) => Promise<void>
-  updateUserProgress: (milestone: number, videoId?: number) => Promise<void>
+  updateUserProgress: (milestone: Milestone) => Promise<void>
+  markVideoWatched: (milestoneId: string) => Promise<void>
+  markExerciseCompleted: (milestoneId: string) => Promise<void>
+  isVideoWatched: (milestoneId: string) => boolean
+  isExerciseCompleted: (milestoneId: string) => boolean
+  isCodeCompleted: (milestoneId: string) => boolean
+  markCodeCompleted: (milestoneId: string) => Promise<void>
   addScore: (points: number) => Promise<void>
   addBadge: (badge: string) => Promise<void>
   resetProgress: () => Promise<void>
@@ -33,6 +37,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
+  const [userProgress, setUserProgress] = useState<UserProgress | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [refreshAttempted, setRefreshAttempted] = useState(false)
 
@@ -40,43 +45,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserData = async () => {
     try {
       const response = await api.get("/auth/user/")
+      setUser(response.data)
 
-      // Initialize progress data if not present in the response
-      const userData = {
-        ...response.data,
-        currentMilestone: response.data.currentMilestone || 1,
-        totalScore: response.data.totalScore || 0,
-        completedVideos: response.data.completedVideos || [],
-        badges: response.data.badges || [],
+      // Fetch user progress
+      try {
+        const progress = await fetchUserProgress()
+        setUserProgress(progress)
+      } catch (progressError) {
+        console.error("Failed to fetch user progress", progressError)
       }
-
-      setUser(userData)
-
-      // Also store current milestone in localStorage as backup
-      localStorage.setItem("currentMilestone", String(userData.currentMilestone))
-      localStorage.setItem("completedVideos", JSON.stringify(userData.completedVideos))
 
       return true
     } catch (error) {
       console.error("Failed to fetch user data", error)
-
-      // Try to get milestone from localStorage if API fails
-      if (localStorage.getItem("currentMilestone")) {
-        const storedMilestone = Number(localStorage.getItem("currentMilestone"))
-        const storedVideos = JSON.parse(localStorage.getItem("completedVideos") || "[]")
-
-        setUser({
-          id: 0, // Provide a default value or fetch from another source
-          username: "Guest", // Provide a default value
-          email: "guest@example.com", // Provide a default value
-          currentMilestone: storedMilestone,
-          completedVideos: storedVideos,
-          totalScore: 0,
-          badges: [],
-        })
-        return true
-      }
-
       return false
     }
   }
@@ -163,9 +144,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await api.post("/auth/logout/")
       setUser(null)
-      // Clear local storage on logout
-      localStorage.removeItem("currentMilestone")
-      localStorage.removeItem("completedVideos")
+      setUserProgress(null)
     } finally {
       setIsLoading(false)
     }
@@ -193,135 +172,124 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  // New function to update user progress
-  const updateUserProgress = async (milestone: number, videoId?: number) => {
+  // Function to update user progress
+  const updateUserProgress = async (milestone: Milestone) => {
     if (!user) return
 
     try {
-      // Update locally first for immediate feedback
-      const updatedUser = { ...user }
+      await updateCurrentMilestone(milestone.id)
 
-      // Update milestone if it's higher than current
-      if (milestone > user.currentMilestone) {
-        updatedUser.currentMilestone = milestone
-        localStorage.setItem("currentMilestone", String(milestone))
-      }
-
-      // Add video to completed videos if provided
-      if (videoId && !user.completedVideos.includes(videoId)) {
-        updatedUser.completedVideos = [...user.completedVideos, videoId]
-        localStorage.setItem("completedVideos", JSON.stringify(updatedUser.completedVideos))
-      }
-
-      setUser(updatedUser)
-
-      // Send update to server
-      await api
-        .post("/auth/update-progress/", {
-          currentMilestone: updatedUser.currentMilestone,
-          completedVideos: updatedUser.completedVideos,
-        })
-        .catch((err) => {
-          console.error("Failed to update progress on server, but local state is updated", err)
-        })
+      // Refresh user progress
+      const progress = await fetchUserProgress()
+      setUserProgress(progress)
     } catch (error) {
       console.error("Error updating progress:", error)
     }
   }
 
-  // Function to add points to user's score
-  const addScore = async (points: number) => {
+  // New function to mark a video as watched
+  const markVideoWatched = async (milestoneId: string) => {
     if (!user) return
 
     try {
-      // Update locally first
-      const updatedUser = {
-        ...user,
-        totalScore: user.totalScore + points,
-      }
+      await api.post(`/learn/milestones/${milestoneId}/mark-video-watched/`)
 
-      setUser(updatedUser)
+      // Refresh user progress
+      const progress = await fetchUserProgress()
+      setUserProgress(progress)
+    } catch (error) {
+      console.error("Error marking video as watched:", error)
+    }
+  }
 
-      // Send to server
-      await api
-        .post("/auth/update-score/", {
-          score: points,
-        })
-        .catch((err) => {
-          console.error("Failed to update score on server, but local state is updated", err)
-        })
+  // New function to mark an exercise as completed
+  const markExerciseCompleted = async (milestoneId: string) => {
+    if (!user) return
+
+    try {
+      await api.post(`/learn/milestones/${milestoneId}/mark-exercise-completed/`)
+
+      // Refresh user progress
+      const progress = await fetchUserProgress()
+      setUserProgress(progress)
+    } catch (error) {
+      console.error("Error marking exercise as completed:", error)
+    }
+  }
+
+  // New function to mark code as completed
+  const markCodeCompleted = async (milestoneId: string) => {
+    if (!user) return
+
+    try {
+      await api.post(`/learn/milestones/${milestoneId}/mark-code-completed/`)
+
+      // Refresh user progress
+      const progress = await fetchUserProgress()
+      setUserProgress(progress)
+    } catch (error) {
+      console.error("Error marking code as completed:", error)
+    }
+  }
+
+  // Check if a video has been watched
+  const isVideoWatched = (milestoneId: string): boolean => {
+    if (!userProgress || !userProgress.watched_videos) return false
+    return userProgress.watched_videos.includes(milestoneId)
+  }
+
+  // Check if an exercise has been completed
+  const isExerciseCompleted = (milestoneId: string): boolean => {
+    if (!userProgress || !userProgress.completed_exercises) return false
+    return userProgress.completed_exercises.includes(milestoneId)
+  }
+
+  // Check if code has been completed
+  const isCodeCompleted = (milestoneId: string): boolean => {
+    if (!userProgress || !userProgress.completed_code) return false
+    return userProgress.completed_code.includes(milestoneId)
+  }
+
+  // Function to add points to user's score
+  const addScore = async (points: number) => {
+    if (!user || !userProgress) return
+
+    try {
+      // This is a placeholder - we'll rely on the backend to update the score
+      // Refresh user progress to get the updated score
+      const progress = await fetchUserProgress()
+      setUserProgress(progress)
     } catch (error) {
       console.error("Error updating score:", error)
     }
   }
 
-  // Function to add a badge
+  // Function to add a badge - this is now handled by the backend
   const addBadge = async (badge: string) => {
-    if (!user || user.badges.includes(badge)) return
-
-    try {
-      // Update locally first
-      const updatedUser = {
-        ...user,
-        badges: [...user.badges, badge],
-      }
-
-      setUser(updatedUser)
-
-      // Send to server
-      await api
-        .post("/auth/add-badge/", {
-          badge,
-        })
-        .catch((err) => {
-          console.error("Failed to add badge on server, but local state is updated", err)
-        })
-    } catch (error) {
-      console.error("Error adding badge:", error)
-    }
+    // This is a placeholder - badges are now handled by the backend
+    console.log("Badge system is now handled by the backend")
   }
 
   // Add function to reset user progress
   const resetProgress = async () => {
     setIsLoading(true)
     try {
-      // Reset local state
-      if (user) {
-        const resetUser = {
-          ...user,
-          currentMilestone: 1,
-          completedVideos: [],
-          totalScore: 0,
-          badges: [],
-        }
-        setUser(resetUser)
-      }
+      // Call backend to reset progress
+      await api.post("/auth/reset-progress/")
 
-      // Clear localStorage
-      localStorage.removeItem("currentMilestone")
-      localStorage.removeItem("completedVideos")
-
-      // Clear all video watched states
-      for (let i = 1; i <= 8; i++) {
-        localStorage.removeItem(`video_${1000 + i}_watched`)
-        localStorage.removeItem(`code_${i}_success`)
-        localStorage.removeItem(`exercise_${i}_completed`)
-      }
-
-      // Send update to server
-      await api.post("/auth/reset-progress/").catch((err) => {
-        console.error("Failed to reset progress on server, but local state is reset", err)
-      })
+      // Refresh user progress
+      const progress = await fetchUserProgress()
+      setUserProgress(progress)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Add resetProgress to the context value
   return (
     <AuthContext.Provider
       value={{
         user,
+        userProgress,
         isAuthenticated: !!user,
         isLoading,
         login,
@@ -331,6 +299,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         forgotPassword,
         resetPassword,
         updateUserProgress,
+        markVideoWatched,
+        markExerciseCompleted,
+        isVideoWatched,
+        isExerciseCompleted,
+        isCodeCompleted,
+        markCodeCompleted,
         addScore,
         addBadge,
         resetProgress,

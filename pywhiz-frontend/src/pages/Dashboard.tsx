@@ -3,37 +3,39 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
-import { Trophy, Star, Award, BookOpen, Code, CheckCircle, ArrowRight, Medal, RefreshCw } from "lucide-react"
+import { Trophy, Star, Award, BookOpen, CheckCircle, ArrowRight, Medal, RefreshCw } from "lucide-react"
 import confetti from "canvas-confetti"
+import { fetchMilestones, type Milestone } from "../services/learnApi"
 
 const DashboardPage = () => {
-  const { user, isAuthenticated, resetProgress } = useAuth()
+  const { user, userProgress, isAuthenticated, resetProgress } = useAuth()
   const navigate = useNavigate()
   const [showConfetti, setShowConfetti] = useState(false)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
+  const [milestones, setMilestones] = useState<Milestone[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Updated milestone data to include all 15 milestones
-  const milestones = [
-    { id: 1, title: "Introduction to Python", icon: <BookOpen className="h-6 w-6" />, path: "/learn" },
-    { id: 2, title: "Python Variables", icon: <Code className="h-6 w-6" />, path: "/learn2" },
-    { id: 3, title: "Python Data Types", icon: <Code className="h-6 w-6" />, path: "/learn3" },
-    { id: 4, title: "Python Operators", icon: <Code className="h-6 w-6" />, path: "/learn4" },
-    { id: 5, title: "Python If-Else", icon: <Code className="h-6 w-6" />, path: "/learn5" },
-    { id: 6, title: "Python For Loops", icon: <Code className="h-6 w-6" />, path: "/learn6" },
-    { id: 7, title: "Python While Loops", icon: <Code className="h-6 w-6" />, path: "/learn7" },
-    { id: 8, title: "Python Functions", icon: <Code className="h-6 w-6" />, path: "/learn8" },
-    { id: 9, title: "Python Arrays", icon: <Code className="h-6 w-6" />, path: "/learn9" },
-    { id: 10, title: "Python Math", icon: <Code className="h-6 w-6" />, path: "/learn10" },
-    { id: 11, title: "Python Lists", icon: <Code className="h-6 w-6" />, path: "/learn11" },
-    { id: 12, title: "Python Tuples", icon: <Code className="h-6 w-6" />, path: "/learn12" },
-    { id: 13, title: "Python Sets", icon: <Code className="h-6 w-6" />, path: "/learn13" },
-    { id: 14, title: "Python Dictionaries", icon: <Code className="h-6 w-6" />, path: "/learn14" },
-    { id: 15, title: "Python File Handling", icon: <Code className="h-6 w-6" />, path: "/learn15" },
-  ]
+  // Fetch milestones from API
+  useEffect(() => {
+    const getMilestones = async () => {
+      try {
+        const data = await fetchMilestones()
+        setMilestones(data)
+      } catch (error) {
+        console.error("Failed to fetch milestones:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (isAuthenticated) {
+      getMilestones()
+    }
+  }, [isAuthenticated])
 
   // Trigger confetti effect on first load if user has made progress
   useEffect(() => {
-    if (user && user.currentMilestone > 1 && !showConfetti) {
+    if (userProgress && userProgress.completed_milestones.length > 0 && !showConfetti) {
       setShowConfetti(true)
       confetti({
         particleCount: 100,
@@ -41,7 +43,7 @@ const DashboardPage = () => {
         origin: { y: 0.6 },
       })
     }
-  }, [user, showConfetti])
+  }, [userProgress, showConfetti])
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -52,17 +54,10 @@ const DashboardPage = () => {
 
   // Handle continue learning button
   const handleContinueLearning = () => {
-    if (!user) return
+    if (!userProgress) return
 
-    // If user has completed all milestones, go to personalized exercises
-    if (user.currentMilestone > 15) {
-      navigate("/personalized-exercises")
-      return
-    }
-
-    // Otherwise go to the current milestone's learn page
-    const currentMilestonePath = milestones.find((m) => m.id === user.currentMilestone)?.path || "/learn"
-    navigate(currentMilestonePath)
+    // Navigate to the current milestone's learn page
+    navigate(`/learn/${userProgress.current_milestone.id}`)
   }
 
   const handleReset = () => {
@@ -72,11 +67,22 @@ const DashboardPage = () => {
   const confirmReset = async () => {
     await resetProgress()
     setShowResetConfirmation(false)
-    // Show a message or redirect
-    navigate("/learn")
+    // Navigate to the first milestone
+    if (milestones.length > 0) {
+      navigate(`/learn/${milestones[0].id}`)
+    }
   }
 
-  if (!user) return null
+  if (!user || !userProgress || isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#10b3b3]"></div>
+      </div>
+    )
+  }
+
+  // Get badges from completed milestones
+  const badges = userProgress.completed_milestones.map((milestone) => `Completed: ${milestone.title}`)
 
   return (
     <div className="bg-gradient-to-b from-[#e6f7f7] to-white min-h-[calc(100vh-64px)]">
@@ -90,12 +96,12 @@ const DashboardPage = () => {
               <div className="flex items-center space-x-4 mb-4">
                 <div className="bg-[#10b3b3] text-white px-4 py-2 rounded-full flex items-center">
                   <Trophy className="h-5 w-5 mr-2" />
-                  <span>{user.totalScore} Points</span>
+                  <span>{userProgress.score} Points</span>
                 </div>
 
                 <div className="bg-[#003366] text-white px-4 py-2 rounded-full flex items-center">
                   <Medal className="h-5 w-5 mr-2" />
-                  <span>{user.badges.length} Badges</span>
+                  <span>{badges.length} Badges</span>
                 </div>
               </div>
 
@@ -121,13 +127,13 @@ const DashboardPage = () => {
                 <div className="w-32 h-32 md:w-40 md:h-40 bg-[#e6f7f7] rounded-full flex items-center justify-center border-4 border-[#10b3b3]">
                   <div className="text-center">
                     <div className="text-3xl md:text-4xl font-bold text-[#003366]">
-                      {Math.min(user.currentMilestone, 15)}
+                      {userProgress.current_milestone.order}
                     </div>
-                    <div className="text-sm text-gray-600">of 15</div>
+                    <div className="text-sm text-gray-600">of {milestones.length}</div>
                     <div className="text-xs md:text-sm text-[#10b3b3] font-medium">Milestones</div>
                   </div>
                 </div>
-                {user.currentMilestone > 15 && (
+                {userProgress.completed_milestones.length === milestones.length && (
                   <div className="absolute -top-2 -right-2 bg-yellow-400 text-white p-2 rounded-full">
                     <Star className="h-5 w-5" />
                   </div>
@@ -138,13 +144,13 @@ const DashboardPage = () => {
         </div>
 
         {/* Badges Section */}
-        {user.badges.length > 0 && (
+        {badges.length > 0 && (
           <div className="bg-white rounded-xl p-6 shadow-md mb-8">
             <h2 className="text-xl font-bold text-[#003366] mb-4 flex items-center">
               <Award className="mr-2 h-6 w-6 text-yellow-500" /> Your Achievements
             </h2>
             <div className="flex flex-wrap gap-4">
-              {user.badges.map((badge, index) => (
+              {badges.map((badge, index) => (
                 <div key={index} className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-center">
                   <Award className="h-5 w-5 text-yellow-500 mr-2" />
                   <span className="font-medium">{badge}</span>
@@ -162,9 +168,9 @@ const DashboardPage = () => {
 
           <div className="space-y-4">
             {milestones.map((milestone) => {
-              const isCompleted = user.currentMilestone > milestone.id
-              const isCurrent = user.currentMilestone === milestone.id
-              const isLocked = user.currentMilestone < milestone.id
+              const isCompleted = userProgress.completed_milestones.some((m) => m.id === milestone.id)
+              const isCurrent = userProgress.current_milestone.id === milestone.id
+              const isLocked = userProgress.current_milestone.order < milestone.order
 
               return (
                 <div
@@ -191,7 +197,7 @@ const DashboardPage = () => {
                         {isCompleted ? (
                           <CheckCircle className="h-5 w-5" />
                         ) : (
-                          <div className="flex items-center justify-center h-5 w-5 font-bold">{milestone.id}</div>
+                          <div className="flex items-center justify-center h-5 w-5 font-bold">{milestone.order}</div>
                         )}
                       </div>
                       <div>
@@ -205,7 +211,7 @@ const DashboardPage = () => {
                     </div>
 
                     <button
-                      onClick={() => navigate(milestone.path)}
+                      onClick={() => navigate(`/learn/${milestone.id}`)}
                       disabled={isLocked}
                       className={`px-4 py-2 rounded-lg ${
                         isLocked

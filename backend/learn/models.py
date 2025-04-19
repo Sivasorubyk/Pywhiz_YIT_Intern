@@ -30,6 +30,7 @@ class LearnContent(models.Model):
         return f"Learn Content for {self.milestone.title}"
 
 class CodeQuestion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     milestone = models.ForeignKey(Milestone, on_delete=models.CASCADE, related_name='code_questions')
     question = models.TextField()
     example_code = models.TextField(blank=True)
@@ -59,6 +60,7 @@ class UserCodeAnswer(models.Model):
         return f"{self.user.email}'s answer to {self.question.id}"
 
 class MCQQuestion(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     milestone = models.ForeignKey(Milestone, on_delete=models.CASCADE, related_name='mcq_questions')
     question_text = models.TextField()
     options = models.JSONField()  # Format: {'A': 'Option 1', 'B': 'Option 2', ...}
@@ -90,10 +92,14 @@ class UserMCQAnswer(models.Model):
         return f"{self.user.email}'s answer to MCQ {self.question.id}"
 
 class UserProgress(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='progress')
-    current_milestone = models.ForeignKey(Milestone, on_delete=models.SET_NULL, null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    current_milestone = models.ForeignKey(Milestone, on_delete=models.SET_NULL, null=True, related_name='current_users')
     completed_milestones = models.ManyToManyField(Milestone, related_name='completed_by', blank=True)
-    score = models.PositiveIntegerField(default=0)
+    # New fields to track specific progress
+    watched_videos = models.ManyToManyField(Milestone, related_name='videos_watched_by', blank=True)
+    completed_code = models.ManyToManyField(Milestone, related_name='code_completed_by', blank=True)
+    completed_exercises = models.ManyToManyField(Milestone, related_name='exercises_completed_by', blank=True)
+    score = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -101,6 +107,7 @@ class UserProgress(models.Model):
         return f"{self.user.email}'s Progress"
 
 class PersonalizedExercise(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='personalized_exercises')
     question = models.TextField()
     generated_code = models.TextField(blank=True)
