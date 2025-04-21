@@ -76,6 +76,26 @@ export interface MCQSubmissionResponse {
   explanation: string
 }
 
+// New interface for personalized exercises
+export interface PersonalizedExercise {
+  id: string
+  user: {
+    id: number
+    username: string
+    email: string
+  }
+  question: string
+  generated_code: string
+  difficulty: "easy" | "medium" | "hard"
+  output: string
+  hints: string
+  suggestions: string
+  is_completed: boolean
+  attempts: number
+  created_at: string
+  updated_at: string
+}
+
 // API functions
 export const fetchMilestones = async (): Promise<Milestone[]> => {
   const response = await api.get("/learn/milestones/")
@@ -114,4 +134,23 @@ export const fetchUserProgress = async (): Promise<UserProgress> => {
 
 export const updateCurrentMilestone = async (milestoneId: string): Promise<void> => {
   await api.post("/learn/progress/update-milestone/", { milestone_id: milestoneId })
+}
+
+// New API functions for personalized exercises
+export const fetchPersonalizedExercises = async (): Promise<PersonalizedExercise[]> => {
+  const response = await api.get("/learn/personalized-exercises/")
+  return response.data
+}
+
+export const createPersonalizedExercise = async (data: {
+  question: string
+  difficulty: "easy" | "medium" | "hard"
+}): Promise<PersonalizedExercise> => {
+  const response = await api.post("/learn/personalized-exercises/", data)
+  return response.data
+}
+
+export const submitPersonalizedExercise = async (exerciseId: string, code: string): Promise<PersonalizedExercise> => {
+  const response = await api.post(`/learn/personalized-exercises/${exerciseId}/submit/`, { code })
+  return response.data
 }

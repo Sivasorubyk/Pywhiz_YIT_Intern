@@ -1,6 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from django.core.mail import send_mail
 from django.conf import settings
 import random
@@ -26,6 +27,7 @@ from django.conf import settings
 import logging
 
 class RegisterView(generics.CreateAPIView):
+    permission_classes = [AllowAny]  # Add this line
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
     
@@ -55,6 +57,7 @@ class RegisterView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 class VerifyEmailView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = EmailVerificationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -126,6 +129,7 @@ class UserDetailView(generics.RetrieveAPIView):
         return self.request.user
 
 class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = PasswordResetRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -155,6 +159,7 @@ class PasswordResetRequestView(APIView):
         return Response({'message': 'OTP sent to your email'}, status=status.HTTP_200_OK)
 
 class PasswordResetView(APIView):
+    permission_classes = [AllowAny]
     def post(self, request):
         serializer = PasswordResetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

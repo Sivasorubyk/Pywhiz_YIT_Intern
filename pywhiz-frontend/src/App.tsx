@@ -1,3 +1,5 @@
+"use client"
+
 import { Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider } from "./contexts/AuthContext"
 import Layout from "./components/Layout"
@@ -11,6 +13,23 @@ import DashboardPage from "./pages/Dashboard"
 import LearnPage from "./pages/LearnPage"
 import CodePage from "./pages/CodePage"
 import ExercisePage from "./pages/ExercisePage"
+import PersonalizedExercisePage from "./pages/PersonalizedExercisePage"
+import { useAuth } from "./contexts/AuthContext"
+
+// Redirect component for the /learn route
+const LearnRedirect = () => {
+  const { userProgress, isAuthenticated } = useAuth()
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (!userProgress || !userProgress.current_milestone) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return <Navigate to={`/learn/${userProgress.current_milestone.id}`} replace />
+}
 
 function App() {
   return (
@@ -30,6 +49,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Redirect /learn to the appropriate milestone */}
+          <Route
+            path="learn"
+            element={
+              <ProtectedRoute>
+                <LearnRedirect />
               </ProtectedRoute>
             }
           />
@@ -56,6 +85,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <ExercisePage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* New personalized exercise route */}
+          <Route
+            path="personalized-exercises"
+            element={
+              <ProtectedRoute>
+                <PersonalizedExercisePage />
               </ProtectedRoute>
             }
           />

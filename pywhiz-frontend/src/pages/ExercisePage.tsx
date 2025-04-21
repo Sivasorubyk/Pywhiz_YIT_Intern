@@ -141,6 +141,12 @@ const ExercisePage = () => {
 
   const handleNextClick = () => {
     if (milestone && userProgress) {
+      // If this is milestone 15, redirect to personalized exercises
+      if (milestone.order === 15 && milestoneAchieved) {
+        navigate("/personalized-exercises")
+        return
+      }
+
       // If this is the last milestone, go to dashboard
       if (milestone.order === userProgress.completed_milestones.length) {
         navigate("/dashboard")

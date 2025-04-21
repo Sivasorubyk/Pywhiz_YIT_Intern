@@ -84,6 +84,10 @@ const DashboardPage = () => {
   // Get badges from completed milestones
   const badges = userProgress.completed_milestones.map((milestone) => `Completed: ${milestone.title}`)
 
+  // Check if user has completed 15 milestones
+  const hasCompletedFifteenMilestones =
+    userProgress && userProgress.completed_milestones.some((milestone) => milestone.order === 15)
+
   return (
     <div className="bg-gradient-to-b from-[#e6f7f7] to-white min-h-[calc(100vh-64px)]">
       <div className="container mx-auto px-4 py-8">
@@ -229,6 +233,27 @@ const DashboardPage = () => {
             })}
           </div>
         </div>
+
+        {/* Add this right before the Fun Facts Section */}
+        {hasCompletedFifteenMilestones && (
+          <div className="bg-white rounded-xl p-6 shadow-md mb-8 border-2 border-yellow-400">
+            <h2 className="text-xl font-bold text-[#003366] mb-4 flex items-center">
+              <Star className="mr-2 h-6 w-6 text-yellow-500" /> Personalized Exercises
+            </h2>
+            <p className="text-gray-700 mb-4">
+              Congratulations on completing the core curriculum! You've unlocked personalized exercises tailored just
+              for you. Create your own Python challenges and take your skills to the next level!
+            </p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => navigate("/personalized-exercises")}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-full font-bold flex items-center transition-transform transform hover:scale-105 shadow-md"
+              >
+                Start Personalized Exercises <ArrowRight className="ml-2 h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Fun Facts Section */}
         <div className="bg-white rounded-xl p-6 shadow-md">
