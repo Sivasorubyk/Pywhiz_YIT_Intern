@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Volume2, VolumeX, CheckCircle, AlertCircle } from "lucide-react"
+import { Volume2, VolumeX, CheckCircle, AlertCircle, RefreshCw } from "lucide-react"
 import confetti from "canvas-confetti"
 import { useAuth } from "../contexts/AuthContext"
 import {
@@ -16,7 +16,8 @@ import {
 const ExercisePage = () => {
   const navigate = useNavigate()
   const { milestoneId } = useParams<{ milestoneId: string }>()
-  const { userProgress, updateUserProgress, markExerciseCompleted, isExerciseCompleted } = useAuth()
+  const { userProgress, updateUserProgress, markExerciseCompleted, isExerciseCompleted, resetMilestoneProgress } =
+    useAuth()
 
   const [milestone, setMilestone] = useState<Milestone | null>(null)
   const [mcqQuestions, setMcqQuestions] = useState<MCQQuestion[]>([])
@@ -29,6 +30,8 @@ const ExercisePage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [allQuestionsAnswered, setAllQuestionsAnswered] = useState(false)
+  const [showResetConfirmation, setShowResetConfirmation] = useState(false)
+  const [localMilestoneAchieved, setLocalMilestoneAchieved] = useState(false)
 
   // Fetch milestone and MCQ questions
   useEffect(() => {
@@ -68,6 +71,16 @@ const ExercisePage = () => {
       fetchData()
     }
   }, [milestoneId, isExerciseCompleted])
+
+  useEffect(() => {
+    if (milestoneId) {
+      const storedCompletion = localStorage.getItem(`exercise_completed_${milestoneId}`)
+      if (storedCompletion === "true") {
+        setLocalMilestoneAchieved(true)
+        setShowResults(true)
+      }
+    }
+  }, [milestoneId])
 
   // Check if all questions are answered
   useEffect(() => {
@@ -114,6 +127,10 @@ const ExercisePage = () => {
 
     if (allCorrect) {
       setMilestoneAchieved(true)
+      setLocalMilestoneAchieved(true)
+
+      // Store in localStorage
+      localStorage.setItem(`exercise_completed_${milestoneId}`, "true")
 
       // Mark exercise as completed in the backend
       markExerciseCompleted(milestoneId)
@@ -161,6 +178,24 @@ const ExercisePage = () => {
     navigate(`/code/${milestoneId}`)
   }
 
+  const handleReset = () => {
+    setShowResetConfirmation(true)
+  }
+
+  const confirmReset = async () => {
+    if (milestoneId) {
+      await resetMilestoneProgress(milestoneId)
+      setAnswers({})
+      setResults({})
+      setExplanations({})
+      setShowResults(false)
+      setMilestoneAchieved(false)
+      setLocalMilestoneAchieved(false)
+      localStorage.removeItem(`exercise_completed_${milestoneId}`)
+      setShowResetConfirmation(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -185,7 +220,7 @@ const ExercisePage = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-4 flex items-center justify-between">
           <span className="inline-block bg-[#10b3b3] text-white px-4 py-1 rounded-full text-sm font-medium">
-            Milestone {milestone.order}
+            {milestone.title}
           </span>
 
           <button onClick={() => navigate("/dashboard")} className="text-[#10b3b3] hover:text-[#0d9999] font-medium">
@@ -193,7 +228,13 @@ const ExercisePage = () => {
           </button>
         </div>
 
-        <h1 className="text-2xl font-bold text-center mb-6">{milestone.title} - Exercise</h1>
+        <div className="flex justify-between items-start mb-6">
+          <h1 className="text-2xl font-bold">{milestone.title} - Exercise</h1>
+          <button onClick={handleReset} className="text-red-500 hover:text-red-600 flex items-center text-sm">
+            <RefreshCw className="h-4 w-4 mr-1" />
+            Reset Progress
+          </button>
+        </div>
 
         <div className="bg-[#e6f7f7] rounded-xl p-6 shadow-md mb-8">
           <div className="flex items-center">
@@ -226,17 +267,18 @@ const ExercisePage = () => {
           </div>
         </div>
 
-        {milestoneAchieved && (
-          <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-8 flex items-center">
-            <CheckCircle className="h-6 w-6 mr-3 text-green-500" />
-            <div>
-              <h3 className="font-bold">Congratulations!</h3>
-              <p>You've completed Milestone {milestone.order}! Keep up the great work.</p>
+        {milestoneAchieved ||
+          (localMilestoneAchieved && (
+            <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-8 flex items-center">
+              <CheckCircle className="h-6 w-6 mr-3 text-green-500" />
+              <div>
+                <h3 className="font-bold">Congratulations!</h3>
+                <p>You've completed {milestone.title}! Keep up the great work.</p>
+              </div>
             </div>
-          </div>
-        )}
+          ))}
 
-        {milestoneAchieved && (
+        {(milestoneAchieved || localMilestoneAchieved) && (
           <div className="fixed bottom-4 right-4 z-40 bg-white rounded-lg shadow-lg p-2 max-w-xs animate-bounce">
             <div className="flex items-center">
               <img
@@ -343,6 +385,29 @@ const ExercisePage = () => {
           )}
         </div>
       </div>
+
+      {/* Reset confirmation modal */}
+      {showResetConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md">
+            <h3 className="text-xl font-bold text-red-600 mb-4">Reset This Milestone?</h3>
+            <p className="text-gray-700 mb-6">
+              This will reset your progress for this milestone only. You'll need to complete the exercise again.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowResetConfirmation(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button onClick={confirmReset} className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

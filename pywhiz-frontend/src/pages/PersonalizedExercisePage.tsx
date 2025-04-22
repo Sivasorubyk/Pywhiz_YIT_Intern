@@ -30,6 +30,8 @@ const PersonalizedExercisePage = () => {
   const [output, setOutput] = useState("")
   const [hints, setHints] = useState("")
   const [suggestions, setSuggestions] = useState("")
+  const [encouragement, setEncouragement] = useState("")
+  const [focusArea, setFocusArea] = useState("")
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState("")
   const [isRunning, setIsRunning] = useState(false)
@@ -39,6 +41,14 @@ const PersonalizedExercisePage = () => {
   const [newQuestion, setNewQuestion] = useState("")
   const [newDifficulty, setNewDifficulty] = useState<"easy" | "medium" | "hard">("easy")
   const [creating, setCreating] = useState(false)
+  const [isFirstAttempt, setIsFirstAttempt] = useState(false)
+
+  useEffect(() => {
+    // Check if user has completed 15 milestones
+    if (userProgress && !userProgress.completed_milestones.some((m) => m.order === 15)) {
+      navigate("/dashboard")
+    }
+  }, [userProgress, navigate])
 
   // Fetch personalized exercises
   useEffect(() => {
@@ -75,8 +85,18 @@ const PersonalizedExercisePage = () => {
     setOutput(exercise.output || "")
     setHints(exercise.hints || "")
     setSuggestions(exercise.suggestions || "")
-    setIsSuccess(exercise.is_completed)
+
+    // Check localStorage for completed state
+    const storedSuccess = localStorage.getItem(`personalized_success_${exercise.id}`)
+    if (storedSuccess === "true" || exercise.is_completed) {
+      setIsSuccess(true)
+    } else {
+      setIsSuccess(exercise.is_completed)
+    }
+
     setError("")
+    setEncouragement("")
+    setFocusArea("")
   }
 
   // Run the code
@@ -89,6 +109,8 @@ const PersonalizedExercisePage = () => {
     setSuggestions("")
     setError("")
     setIsSuccess(false)
+    setEncouragement("")
+    setFocusArea("")
 
     try {
       const response = await submitPersonalizedExercise(selectedExercise.id, code)
@@ -105,8 +127,20 @@ const PersonalizedExercisePage = () => {
       setSuggestions(response.suggestions || "")
       setIsSuccess(response.is_completed)
 
-      // If successful, show confetti effect
+      // Set encouragement and focus area if available
+      if (response.encouragement) {
+        setEncouragement(response.encouragement)
+      }
+
+      if (response.focus_area) {
+        setFocusArea(response.focus_area)
+      }
+
+      setIsFirstAttempt(response.is_first_attempt || false)
+
+      // If successful, show confetti effect and store in localStorage
       if (response.is_completed) {
+        localStorage.setItem(`personalized_success_${response.id}`, "true")
         confetti({
           particleCount: 100,
           spread: 70,
@@ -141,6 +175,8 @@ const PersonalizedExercisePage = () => {
       setHints("")
       setSuggestions("")
       setIsSuccess(false)
+      setEncouragement("")
+      setFocusArea("")
 
       // Reset form and hide it
       setNewQuestion("")
@@ -389,6 +425,12 @@ const PersonalizedExercisePage = () => {
                       </div>
                     )}
 
+                    {encouragement && (
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-600 rounded-lg">
+                        <p>{encouragement}</p>
+                      </div>
+                    )}
+
                     <div className="text-gray-700 mb-4">
                       {output ? (
                         <pre className="bg-gray-100 p-3 rounded-md overflow-auto max-h-48 text-sm">{output}</pre>
@@ -396,6 +438,13 @@ const PersonalizedExercisePage = () => {
                         <p>Run your code to see the output here.</p>
                       )}
                     </div>
+
+                    {focusArea && (
+                      <div className="mb-4">
+                        <h4 className="font-medium mb-2">Focus Area:</h4>
+                        <div className="bg-yellow-50 p-3 rounded-md text-sm border border-yellow-100">{focusArea}</div>
+                      </div>
+                    )}
 
                     {hints && (
                       <div className="mb-4">

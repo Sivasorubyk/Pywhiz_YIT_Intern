@@ -30,7 +30,7 @@ interface AuthContextType {
   markCodeCompleted: (milestoneId: string) => Promise<void>
   addScore: (points: number) => Promise<void>
   addBadge: (badge: string) => Promise<void>
-  resetProgress: () => Promise<void>
+  resetMilestoneProgress: (milestoneId: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -270,18 +270,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log("Badge system is now handled by the backend")
   }
 
-  // Add function to reset user progress
-  const resetProgress = async () => {
-    setIsLoading(true)
+  // Function to reset progress for a specific milestone
+  const resetMilestoneProgress = async (milestoneId: string) => {
+    if (!user) return
+
     try {
-      // Call backend to reset progress
-      await api.post("/auth/reset-progress/")
+      // Remove milestone from watched videos
+      if (userProgress && userProgress.watched_videos.includes(milestoneId)) {
+        await api.post(`/learn/milestones/${milestoneId}/mark-video-watched/`, { reset: true })
+        localStorage.removeItem(`video_watched_${milestoneId}`)
+      }
+
+      // Remove milestone from completed code
+      if (userProgress && userProgress.completed_code.includes(milestoneId)) {
+        await api.post(`/learn/milestones/${milestoneId}/mark-code-completed/`, { reset: true })
+        localStorage.removeItem(`code_success_${milestoneId}`)
+      }
+
+      // Remove milestone from completed exercises
+      if (userProgress && userProgress.completed_exercises.includes(milestoneId)) {
+        await api.post(`/learn/milestones/${milestoneId}/mark-exercise-completed/`, { reset: true })
+        localStorage.removeItem(`exercise_completed_${milestoneId}`)
+      }
 
       // Refresh user progress
       const progress = await fetchUserProgress()
       setUserProgress(progress)
-    } finally {
-      setIsLoading(false)
+    } catch (error) {
+      console.error("Error resetting milestone progress:", error)
     }
   }
 
@@ -307,7 +323,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         markCodeCompleted,
         addScore,
         addBadge,
-        resetProgress,
+        resetMilestoneProgress,
       }}
     >
       {children}

@@ -76,20 +76,26 @@ class SubmitCodeView(APIView):
             stderr = result.get("stderr", "").strip()
 
             # 🧠 2. Call OpenAI with the real output
-            # openai.api_key = settings.OPENAI_API_KEY
             prompt = (
                 f"Question: {question.question}\n\n"
                 f"Code:\n{user_code}\n\n"
                 f"Output:\n{stdout}\n\n"
                 f"Error:\n{stderr if stderr else 'None'}\n\n"
-                "Is this answer correct? Give hints and suggestions. "
-                "Respond in JSON with keys: output, hints, suggestions, is_correct."
+                "Analyze this code and determine if it correctly answers the question. "
+                "For code without output, check if it properly implements what was asked. "
+                "Respond in JSON with keys: output, hints, suggestions, is_correct. "
+                "The 'output' key should contain your analysis if there's no console output."
             )
 
             chat_response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "You are a Python tutor."},
+                    {
+                        "role": "system", 
+                        "content": "You are a Python tutor. Analyze the code thoroughly, "
+                                  "even if it doesn't produce output. Check variable declarations, "
+                                  "function definitions, and overall structure."
+                    },
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.7,
@@ -112,6 +118,10 @@ class SubmitCodeView(APIView):
                     return Response(
                         {"error": "Incomplete feedback from AI"}, status=500
                     )
+
+            # If there was no output from execution, use AI's analysis as output
+            if not stdout and not stderr:
+                feedback["output"] = "Code executed successfully. " + feedback["output"]
 
             # 📝 5. Save to database
             answer, _ = UserCodeAnswer.objects.update_or_create(

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Volume2, VolumeX, AlertCircle, CheckCircle } from "lucide-react"
+import { Volume2, VolumeX, AlertCircle, CheckCircle, RefreshCw } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import {
   fetchCodeQuestions,
@@ -15,7 +15,7 @@ import {
 const CodePage = () => {
   const navigate = useNavigate()
   const { milestoneId } = useParams<{ milestoneId: string }>()
-  const { userProgress, isCodeCompleted, markCodeCompleted } = useAuth()
+  const { userProgress, isCodeCompleted, markCodeCompleted, resetMilestoneProgress } = useAuth()
 
   const [milestone, setMilestone] = useState<Milestone | null>(null)
   const [codeQuestion, setCodeQuestion] = useState<CodeQuestion | null>(null)
@@ -28,6 +28,8 @@ const CodePage = () => {
   const [error, setError] = useState("")
   const [isMuted, setIsMuted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [showResetConfirmation, setShowResetConfirmation] = useState(false)
+  const [localCodeSuccess, setLocalCodeSuccess] = useState(false)
 
   // Fetch milestone and code questions
   useEffect(() => {
@@ -72,6 +74,15 @@ const CodePage = () => {
     }
   }, [milestoneId, isCodeCompleted])
 
+  useEffect(() => {
+    if (milestoneId) {
+      const storedSuccess = localStorage.getItem(`code_success_${milestoneId}`)
+      if (storedSuccess === "true") {
+        setLocalCodeSuccess(true)
+      }
+    }
+  }, [milestoneId])
+
   // Modify handleRunCode to store success state in the backend
   const handleRunCode = async () => {
     if (!codeQuestion || !milestoneId) return
@@ -94,9 +105,11 @@ const CodePage = () => {
       // If we got a response without errors, consider it successful
       setIsSuccess(response.is_correct)
 
-      // Store success in backend
+      // Store success in backend and localStorage
       if (response.is_correct) {
         markCodeCompleted(milestoneId)
+        localStorage.setItem(`code_success_${milestoneId}`, "true")
+        setLocalCodeSuccess(true)
       }
     } catch (err: any) {
       console.error("Error submitting code:", err)
@@ -113,6 +126,28 @@ const CodePage = () => {
 
   const handlePreviousClick = () => {
     navigate(`/learn/${milestoneId}`)
+  }
+
+  const handleReset = () => {
+    setShowResetConfirmation(true)
+  }
+
+  const confirmReset = async () => {
+    if (milestoneId) {
+      await resetMilestoneProgress(milestoneId)
+      setIsSuccess(false)
+      setLocalCodeSuccess(false)
+      localStorage.removeItem(`code_success_${milestoneId}`)
+      setOutput("")
+      setHints("")
+      setSuggestions("")
+      setShowResetConfirmation(false)
+
+      // Reset code to example code
+      if (codeQuestion) {
+        setCode(codeQuestion.example_code)
+      }
+    }
   }
 
   if (isLoading) {
@@ -139,7 +174,7 @@ const CodePage = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-4 flex items-center justify-between">
           <span className="inline-block bg-[#10b3b3] text-white px-4 py-1 rounded-full text-sm font-medium">
-            Milestone {milestone.order}
+            {milestone.title}
           </span>
 
           <button onClick={() => navigate("/dashboard")} className="text-[#10b3b3] hover:text-[#0d9999] font-medium">
@@ -151,7 +186,13 @@ const CodePage = () => {
           {/* Left Column - Lesson Info & Output */}
           <div className="flex flex-col space-y-6">
             <div className="bg-white rounded-xl p-6 shadow-md">
-              <h2 className="text-xl font-bold mb-4">{milestone.title}</h2>
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold">{milestone.title}</h2>
+                <button onClick={handleReset} className="text-red-500 hover:text-red-600 flex items-center text-sm">
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Reset Progress
+                </button>
+              </div>
               <p className="text-gray-700 mb-6">{milestone.description}</p>
 
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
@@ -263,9 +304,9 @@ const CodePage = () => {
 
               <button
                 onClick={handleNextClick}
-                disabled={!isSuccess}
+                disabled={!isSuccess && !localCodeSuccess}
                 className={`px-6 py-2 rounded-md transition-all duration-300 ${
-                  isSuccess
+                  isSuccess || localCodeSuccess
                     ? "bg-[#10b3b3] hover:bg-[#0d9999] text-white"
                     : "bg-gray-200 text-gray-500 cursor-not-allowed"
                 }`}
@@ -291,6 +332,29 @@ const CodePage = () => {
             <div>
               <p className="font-bold text-[#003366]">Code success!</p>
               <p className="text-sm text-gray-600">You're becoming a Python pro!</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset confirmation modal */}
+      {showResetConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md">
+            <h3 className="text-xl font-bold text-red-600 mb-4">Reset This Milestone?</h3>
+            <p className="text-gray-700 mb-6">
+              This will reset your progress for this milestone only. You'll need to complete the coding exercise again.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowResetConfirmation(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button onClick={confirmReset} className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+                Reset
+              </button>
             </div>
           </div>
         </div>
