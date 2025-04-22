@@ -73,8 +73,20 @@ class UserProgressSerializer(serializers.ModelSerializer):
 
 class PersonalizedExerciseSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    based_on = UserCodeAnswerSerializer(read_only=True)
     
     class Meta:
         model = PersonalizedExercise
         fields = '__all__'
-        read_only_fields = ('user', 'output', 'hints', 'suggestions', 'is_completed')
+        read_only_fields = (
+            'user',
+            'question',         
+            'output',
+            'hints',
+            'suggestions',
+            'is_completed',
+            'focus_areas',
+            'based_on',
+            'created_at',
+            'updated_at'
+        )

@@ -14,10 +14,12 @@ from .serializers import (
     UserProgressSerializer, PersonalizedExerciseSerializer
 )
 from user.models import User
+import requests
 import openai
 import json
 import logging
 import os
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -46,100 +48,97 @@ class CodeQuestionView(generics.ListAPIView):
 
 class SubmitCodeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def post(self, request, question_id):
         try:
             question = CodeQuestion.objects.get(id=question_id)
             user = request.user
-            user_code = request.data.get('code', '')
-            
-            # 1. First validate we have code to submit
+            user_code = request.data.get("code", "")
+
             if not user_code:
-                return Response(
-                    {'error': 'No code provided'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({"error": "No code provided"}, status=400)
 
-            # 2. Make the OpenAI API call with better error handling
+            # 🧪 1. Execute the code using Piston
+            piston_response = requests.post(
+                settings.PISTON_EXECUTE_URL,
+                json={
+                    "language": "python3",
+                    "version": "3.10.0",
+                    "files": [{"name": "main.py", "content": user_code}],
+                },
+            )
+
+            if piston_response.status_code != 200:
+                return Response({"error": "Code execution failed"}, status=500)
+
+            result = piston_response.json().get("run", {})
+            stdout = result.get("stdout", "").strip()
+            stderr = result.get("stderr", "").strip()
+
+            # 🧠 2. Call OpenAI with the real output
+            # openai.api_key = settings.OPENAI_API_KEY
+            prompt = (
+                f"Question: {question.question}\n\n"
+                f"Code:\n{user_code}\n\n"
+                f"Output:\n{stdout}\n\n"
+                f"Error:\n{stderr if stderr else 'None'}\n\n"
+                "Is this answer correct? Give hints and suggestions. "
+                "Respond in JSON with keys: output, hints, suggestions, is_correct."
+            )
+
+            chat_response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a Python tutor."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.7,
+            )
+
+            gpt_reply = chat_response.choices[0].message.content
+
+            # 🧩 3. Parse feedback JSON
             try:
-                response = openai.ChatCompletion.create(
-                    model="gpt-3.5-turbo",
-                    messages=[
-                        {
-                            "role": "system", 
-                            "content": "You are a Python code evaluator. Return JSON with these keys: output, hints, suggestions, is_correct"
-                        },
-                        {
-                            "role": "user", 
-                            "content": f"Question: {question.question}\nCode to evaluate:\n{user_code}\n\nProvide feedback in JSON format."
-                        }
-                    ],
-                    temperature=0.7
-                )
-                
-                # 3. Get the content safely
-                feedback_content = response.choices[0].message.content
-                logger.debug(f"OpenAI raw response: {feedback_content}")
-                
-                # 4. Parse the JSON with better error handling
-                try:
-                    feedback = json.loads(feedback_content)
-                except json.JSONDecodeError:
-                    # If direct parsing fails, try extracting JSON from markdown
-                    if '```json' in feedback_content:
-                        feedback_content = feedback_content.split('```json')[1].split('```')[0]
-                        feedback = json.loads(feedback_content)
-                    else:
-                        raise ValueError("Invalid JSON response from OpenAI")
-                        
-            except Exception as openai_error:
-                logger.error(f"OpenAI API error: {str(openai_error)}")
-                return Response(
-                    {'error': 'Failed to evaluate code - API error'},
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE
-                )
+                feedback = json.loads(gpt_reply)
+            except json.JSONDecodeError:
+                if "```json" in gpt_reply:
+                    feedback = json.loads(gpt_reply.split("```json")[1].split("```")[0])
+                else:
+                    raise ValueError("Invalid JSON from OpenAI")
 
-            # 5. Validate we got all required fields
-            required_fields = ['output', 'hints', 'suggestions', 'is_correct']
-            if not all(field in feedback for field in required_fields):
-                logger.error(f"Missing fields in feedback: {feedback}")
-                return Response(
-                    {'error': 'Incomplete evaluation feedback'},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+            # ✅ 4. Check for required keys
+            for key in ["output", "hints", "suggestions", "is_correct"]:
+                if key not in feedback:
+                    return Response(
+                        {"error": "Incomplete feedback from AI"}, status=500
+                    )
 
-            # 6. Save the answer
-            answer, created = UserCodeAnswer.objects.update_or_create(
+            # 📝 5. Save to database
+            answer, _ = UserCodeAnswer.objects.update_or_create(
                 user=user,
                 question=question,
                 defaults={
-                    'user_code': user_code,
-                    'output': feedback.get('output', ''),
-                    'hints': feedback.get('hints', ''),
-                    'suggestions': feedback.get('suggestions', ''),
-                    'is_correct': feedback.get('is_correct', False)
-                }
+                    "user_code": user_code,
+                    "output": feedback["output"],
+                    "hints": feedback["hints"],
+                    "suggestions": feedback["suggestions"],
+                    "is_correct": feedback["is_correct"],
+                },
             )
-            
-            # 7. Update progress if correct
-            if answer.is_correct:
+
+            # 🎯 6. Update progress
+            if feedback["is_correct"]:
                 progress, _ = UserProgress.objects.get_or_create(user=user)
                 progress.score += 10
                 progress.save()
-            
+
             return Response(UserCodeAnswerSerializer(answer).data)
-            
+
         except CodeQuestion.DoesNotExist:
-            return Response(
-                {'error': 'Question not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "Question not found"}, status=404)
         except Exception as e:
             logger.error(f"Error in SubmitCodeView: {str(e)}", exc_info=True)
-            return Response(
-                {'error': 'Failed to evaluate code'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"error": "Failed to evaluate code"}, status=500)
 
 class MCQQuestionView(generics.ListAPIView):
     serializer_class = MCQQuestionSerializer
@@ -242,48 +241,302 @@ class PersonalizedExerciseView(generics.ListCreateAPIView):
         return PersonalizedExercise.objects.filter(user=self.request.user)
     
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-class SubmitPersonalizedExerciseView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def post(self, request, exercise_id):
+        user = self.request.user
+        difficulty = self.request.data.get('difficulty', 'medium')
+        
+        # Get user's code answer history
+        code_answers = UserCodeAnswer.objects.filter(user=user).select_related('question__milestone')
+        
+        if not code_answers.exists():
+            # If no history, create a generic kid-friendly exercise
+            exercise = serializer.save(
+                user=user,
+                question="Write a Python function that calculates the total cost of 3 ice creams where each costs 50 rupees.",
+                difficulty='easy',
+                hints="Remember to multiply the number of ice creams by the price of each."
+            )
+            return
+        
+        # Prepare context for AI with kid-friendly focus
+        context = {
+            "user_code_examples": [
+                {
+                    "milestone": answer.question.milestone.title,
+                    "question": answer.question.question,
+                    "user_code": answer.user_code,
+                    "is_correct": answer.is_correct,
+                    "attempts": answer.attempts
+                }
+                for answer in code_answers.order_by('-created_at')[:10]  # Last 10 attempts
+            ],
+            "weak_areas": self._identify_weak_areas(code_answers),
+            "strong_areas": self._identify_strong_areas(code_answers),
+            "difficulty": difficulty,
+            "country": "Sri Lanka",
+            "age_group": "11-16"
+        }
+        
+        # Generate personalized exercise using OpenAI with kid-friendly approach
+        prompt = f"""
+        You are a Python programming tutor for kids aged 11-16 in Sri Lanka. 
+        Create a personalized coding exercise with these requirements:
+        
+        1. Difficulty: {context['difficulty']}
+        2. Focus on: {', '.join(context['weak_areas'])} while reinforcing {', '.join(context['strong_areas'])}
+        3. Make it fun and relatable to Sri Lankan kids (use local examples like food, sports, school, etc.)
+        4. Should improve logical and critical thinking
+        5. Include a clear problem statement and example if needed
+        
+        Student's recent coding history:
+        {json.dumps(context['user_code_examples'], indent=2)}
+        
+        Respond with JSON containing: question, difficulty, hints (as a list), and example (optional).
+        """
+        
         try:
-            exercise = PersonalizedExercise.objects.get(id=exercise_id, user=request.user)
-            user_code = request.data.get('code', '')
-            
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": "Evaluate this Python code."},
-                    {"role": "user", "content": f"Exercise: {exercise.question}\nCode: {user_code}"}
+                    {"role": "system", "content": "You are a friendly Python tutor creating fun exercises for kids."},
+                    {"role": "user", "content": prompt}
                 ],
-                temperature=0.7
+                temperature=0.7,
+                response_format={ "type": "json_object" }
             )
             
-            feedback = json.loads(response.choices[0].message.content)
+            content = response.choices[0].message.content
+            exercise_data = json.loads(content)
             
-            exercise.generated_code = user_code
-            exercise.output = feedback.get('output', '')
-            exercise.hints = feedback.get('hints', '')
-            exercise.suggestions = feedback.get('suggestions', '')
-            exercise.is_completed = feedback.get('is_correct', False)
-            exercise.attempts += 1
-            exercise.save()
+            # Format hints as text if they come as list
+            hints = exercise_data.get('hints', [])
+            if isinstance(hints, list):
+                hints = "\n".join([f"- {hint}" for hint in hints])
             
-            if exercise.is_completed:
-                progress = UserProgress.objects.get(user=request.user)
-                progress.score += 20
-                progress.save()
-            
-            return Response(PersonalizedExerciseSerializer(exercise).data)
+            # Save the generated exercise
+            exercise = serializer.save(
+                user=user,
+                question=exercise_data['question'],
+                difficulty=exercise_data.get('difficulty', difficulty),
+                hints=hints,
+                generated_code=exercise_data.get('example', '')
+            )
             
         except Exception as e:
-            logger.error(f"Error in SubmitPersonalizedExerciseView: {str(e)}")
+            logger.error(f"Error generating personalized exercise: {str(e)}")
+            # Fallback to a kid-friendly exercise if AI fails
+            serializer.save(
+                user=user,
+                question="Write a program that calculates how many hoppers (Sri Lankan pancakes) you can make with 500g of flour if each hopper needs 50g of flour.",
+                difficulty='easy',
+                hints="Divide the total flour by the amount needed for each hopper."
+            )
+
+    def _identify_weak_areas(self, code_answers):
+        """Identify concepts the user struggles with, simplified for kids"""
+        weak_areas = set()
+        milestone_weakness = {}
+        
+        # Count incorrect answers per milestone
+        for answer in code_answers:
+            if not answer.is_correct:
+                milestone = answer.question.milestone.title
+                milestone_weakness[milestone] = milestone_weakness.get(milestone, 0) + 1
+        
+        # Get top 3 weakest milestones
+        top_weak = sorted(milestone_weakness.items(), key=lambda x: x[1], reverse=True)[:3]
+        
+        # Map milestones to simplified concepts
+        milestone_map = {
+            "Milestone 1": "basic syntax",
+            "Milestone 2": "variables",
+            "Milestone 3": "data types",
+            "Milestone 4": "operators",
+            "Milestone 5": "if-else",
+            "Milestone 6": "for loops",
+            "Milestone 7": "while loops",
+            "Milestone 8": "functions",
+            "Milestone 9": "arrays",
+            "Milestone 10": "math",
+            "Milestone 11": "lists",
+            "Milestone 12": "tuples",
+            "Milestone 13": "sets",
+            "Milestone 14": "dictionaries",
+            "Milestone 15": "file handling"
+        }
+        
+        for milestone, _ in top_weak:
+            weak_areas.add(milestone_map.get(milestone, "basic concepts"))
+        
+        return weak_areas or {"basic concepts"}
+
+    def _identify_strong_areas(self, code_answers):
+        """Identify concepts the user is good at, simplified for kids"""
+        strong_areas = set()
+        milestone_strength = {}
+        
+        # Count correct answers on first attempt per milestone
+        for answer in code_answers:
+            if answer.is_correct and answer.attempts == 1:
+                milestone = answer.question.milestone.title
+                milestone_strength[milestone] = milestone_strength.get(milestone, 0) + 1
+        
+        # Get top 3 strongest milestones
+        top_strong = sorted(milestone_strength.items(), key=lambda x: x[1], reverse=True)[:3]
+        
+        # Map milestones to simplified concepts
+        milestone_map = {
+            "Milestone 1": "basic syntax",
+            "Milestone 2": "variables",
+            "Milestone 3": "data types",
+            "Milestone 4": "operators",
+            "Milestone 5": "if-else",
+            "Milestone 6": "for loops",
+            "Milestone 7": "while loops",
+            "Milestone 8": "functions",
+            "Milestone 9": "arrays",
+            "Milestone 10": "math",
+            "Milestone 11": "lists",
+            "Milestone 12": "tuples",
+            "Milestone 13": "sets",
+            "Milestone 14": "dictionaries",
+            "Milestone 15": "file handling"
+        }
+        
+        for milestone, _ in top_strong:
+            strong_areas.add(milestone_map.get(milestone, "basic concepts"))
+        
+        return strong_areas or {"basic concepts"}
+
+class SubmitPersonalizedExerciseView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, exercise_id):
+        try:
+            exercise = PersonalizedExercise.objects.get(id=exercise_id, user=request.user)
+            user_code = request.data.get("code", "")
+
+            if not user_code:
+                return Response({"error": "No code provided"}, status=400)
+
+            # 1. Execute the code using Piston
+            piston_response = requests.post(
+                settings.PISTON_EXECUTE_URL,
+                json={
+                    "language": "python3",
+                    "version": "3.10.0",
+                    "files": [{"name": "main.py", "content": user_code}],
+                },
+            )
+
+            if piston_response.status_code != 200:
+                return Response({"error": "Code execution failed"}, status=500)
+
+            result = piston_response.json().get("run", {})
+            stdout = result.get("stdout", "").strip()
+            stderr = result.get("stderr", "").strip()
+
+            # 2. Call OpenAI with the real output for kid-friendly feedback
+            prompt = (
+                f"You are a Python tutor for kids aged 11-16 in Sri Lanka. "
+                f"Evaluate this code with friendly, encouraging feedback:\n\n"
+                f"Exercise: {exercise.question}\n\n"
+                f"Student's Code:\n{user_code}\n\n"
+                f"Output:\n{stdout}\n\n"
+                f"Error:\n{stderr if stderr else 'None'}\n\n"
+                "Provide feedback in JSON format with these keys:\n"
+                "- output: Formatted output explanation\n"
+                "- hints: List of simple hints (max 3)\n"
+                "- suggestions: List of improvement suggestions\n"
+                "- is_correct: boolean\n"
+                "- encouragement: A friendly message praising effort\n"
+                "- focus_area: The main concept to work on\n"
+                "Keep feedback positive and constructive!"
+            )
+
+            chat_response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a friendly Python tutor for kids."},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.7,
+                response_format={ "type": "json_object" }
+            )
+
+            feedback_content = chat_response.choices[0].message.content
+
+            # 3. Parse feedback JSON
+            try:
+                feedback = json.loads(feedback_content)
+            except json.JSONDecodeError:
+                if "```json" in feedback_content:
+                    feedback = json.loads(feedback_content.split("```json")[1].split("```")[0])
+                else:
+                    logger.error(f"Invalid JSON from OpenAI: {feedback_content}")
+                    return Response(
+                        {"error": "Invalid feedback format from AI"}, 
+                        status=500
+                    )
+
+            # 4. Check for required keys
+            required_keys = ["output", "hints", "suggestions", "is_correct", "encouragement", "focus_area"]
+            for key in required_keys:
+                if key not in feedback:
+                    logger.error(f"Missing key in feedback: {key}")
+                    return Response(
+                        {"error": f"Incomplete feedback from AI - missing {key}"}, 
+                        status=500
+                    )
+
+            # 5. Format hints and suggestions
+            hints = feedback["hints"]
+            if isinstance(hints, list):
+                hints = "\n".join([f"• {hint}" for hint in hints])
+            
+            suggestions = feedback["suggestions"]
+            if isinstance(suggestions, list):
+                suggestions = "\n".join([f"• {suggestion}" for suggestion in suggestions])
+
+            # 6. Update the exercise
+            exercise.generated_code = user_code
+            exercise.output = feedback["output"]
+            exercise.hints = hints
+            exercise.suggestions = suggestions
+            exercise.is_completed = feedback["is_correct"]
+            exercise.attempts += 1
+            exercise.save()
+
+            # 7. Update progress if correct
+            if feedback["is_correct"]:
+                progress = UserProgress.objects.get(user=request.user)
+                progress.score += 20  # More points for personalized exercises
+                
+                # Add to completed exercises if not already
+                if exercise.is_completed and not exercise.milestone:
+                    # If we want to associate with a milestone later
+                    pass
+                
+                progress.save()
+
+            # 8. Prepare response with encouragement
+            response_data = PersonalizedExerciseSerializer(exercise).data
+            response_data.update({
+                "encouragement": feedback["encouragement"],
+                "focus_area": feedback["focus_area"],
+                "is_first_attempt": exercise.attempts == 1
+            })
+
+            return Response(response_data)
+
+        except PersonalizedExercise.DoesNotExist:
+            return Response({"error": "Exercise not found"}, status=404)
+        except Exception as e:
+            logger.error(f"Error in SubmitPersonalizedExerciseView: {str(e)}", exc_info=True)
             return Response(
-                {'error': 'Failed to evaluate exercise'},
+                {"error": "Failed to evaluate exercise"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
 class MarkVideoWatchedView(APIView):
     permission_classes = [permissions.IsAuthenticated]

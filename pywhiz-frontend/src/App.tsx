@@ -14,6 +14,7 @@ import LearnPage from "./pages/LearnPage"
 import CodePage from "./pages/CodePage"
 import ExercisePage from "./pages/ExercisePage"
 import PersonalizedExercisePage from "./pages/PersonalizedExercisePage"
+import ContactPage from "./pages/ContactPage"
 import { useAuth } from "./contexts/AuthContext"
 
 // Redirect component for the /learn route
@@ -42,6 +43,7 @@ function App() {
           <Route path="signup" element={<SignupPage />} />
           <Route path="verify-otp" element={<VerifyOtpPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="contact" element={<ContactPage />} />
 
           {/* Protected routes */}
           <Route

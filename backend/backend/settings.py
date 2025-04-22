@@ -156,6 +156,7 @@ USE_TZ = True
 
 # OpenAI
 openai.api_key = os.getenv('OPENAI_API_KEY')
+PISTON_EXECUTE_URL = "https://emkc.org/api/v2/piston/execute"
 
 # Static files
 STATIC_URL = 'static/'

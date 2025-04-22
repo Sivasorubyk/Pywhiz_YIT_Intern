@@ -4,7 +4,7 @@ import api from '../services/api'
 import { CheckCircle, AlertCircle } from 'lucide-react'
 
 const ContactPage = () => {
-  const [name, setName] = useState('')
+  const [full_name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -20,7 +20,7 @@ const ContactPage = () => {
     try {
       // Updated to match Django backend endpoint
       await api.post('/contact/submit/', { 
-        name, 
+        full_name, 
         email, 
         message 
       })
@@ -59,11 +59,11 @@ const ContactPage = () => {
 
             <form onSubmit={handleSubmit}>
               <div className="mb-6">
-                <label htmlFor="name" className="sr-only">Full Name</label>
+                <label htmlFor="full_name" className="sr-only">Full Name</label>
                 <input
-                  id="name"
+                  id="full_name"
                   type="text"
-                  value={name}
+                  value={full_name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your full name"
                   className="input-field"
