@@ -210,7 +210,7 @@ const CodePage = () => {
               <div className="flex items-center mt-4">
                 <div className="flex-shrink-0 mr-4">
                   <img
-                    src="/images/ai-assistant.png"
+                    src="/images/speaking.gif"
                     alt="AI Assistant"
                     className="w-16 h-16 rounded-full"
                     onError={(e) => {

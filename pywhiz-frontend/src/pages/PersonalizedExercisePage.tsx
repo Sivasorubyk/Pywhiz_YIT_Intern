@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Volume2, VolumeX, AlertCircle, CheckCircle, Plus, BarChart4, Code } from "lucide-react"
+import { Volume2, VolumeX, AlertCircle, CheckCircle, Plus, BarChart4, Code, Sparkles } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import confetti from "canvas-confetti"
 import {
@@ -18,6 +18,12 @@ const difficultyColors = {
   easy: "bg-green-100 text-green-800 border-green-200",
   medium: "bg-yellow-100 text-yellow-800 border-yellow-200",
   hard: "bg-red-100 text-red-800 border-red-200",
+}
+
+const difficultyLabels = {
+  easy: "Easy",
+  medium: "Medium",
+  hard: "Hard",
 }
 
 const PersonalizedExercisePage = () => {
@@ -39,9 +45,11 @@ const PersonalizedExercisePage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newQuestion, setNewQuestion] = useState("")
-  const [newDifficulty, setNewDifficulty] = useState<"easy" | "medium" | "hard">("easy")
+  const [selectedDifficulty, setSelectedDifficulty] = useState<"easy" | "medium" | "hard">("easy")
   const [creating, setCreating] = useState(false)
   const [isFirstAttempt, setIsFirstAttempt] = useState(false)
+  const [showDifficultySelection, setShowDifficultySelection] = useState(true)
+  const [generatingExercise, setGeneratingExercise] = useState(false)
 
   useEffect(() => {
     // Check if user has completed 15 milestones
@@ -58,14 +66,9 @@ const PersonalizedExercisePage = () => {
         const data = await fetchPersonalizedExercises()
         setExercises(data)
         if (data.length > 0) {
-          setSelectedExercise(data[0])
-          setCode(data[0].generated_code || "")
-          if (data[0].output) {
-            setOutput(data[0].output)
-            setHints(data[0].hints)
-            setSuggestions(data[0].suggestions)
-            setIsSuccess(data[0].is_completed)
-          }
+          // Don't automatically select an exercise - wait for user to select difficulty
+          // and generate a new exercise
+          setShowDifficultySelection(true)
         }
       } catch (err) {
         console.error("Error fetching personalized exercises:", err)
@@ -85,6 +88,7 @@ const PersonalizedExercisePage = () => {
     setOutput(exercise.output || "")
     setHints(exercise.hints || "")
     setSuggestions(exercise.suggestions || "")
+    setShowDifficultySelection(false)
 
     // Check localStorage for completed state
     const storedSuccess = localStorage.getItem(`personalized_success_${exercise.id}`)
@@ -97,6 +101,51 @@ const PersonalizedExercisePage = () => {
     setError("")
     setEncouragement("")
     setFocusArea("")
+  }
+
+  // Generate a new exercise based on selected difficulty
+  const handleGenerateExercise = async () => {
+    setGeneratingExercise(true)
+    setError("")
+
+    try {
+      // Generate a generic question based on difficulty
+      let questionPrompt = ""
+
+      switch (selectedDifficulty) {
+        case "easy":
+          questionPrompt = "Generate a simple Python exercise for a beginner"
+          break
+        case "medium":
+          questionPrompt = "Generate an intermediate Python exercise with functions"
+          break
+        case "hard":
+          questionPrompt = "Generate a challenging Python exercise with advanced concepts"
+          break
+      }
+
+      const newExercise = await createPersonalizedExercise({
+        question: questionPrompt,
+        difficulty: selectedDifficulty,
+      })
+
+      // Add the new exercise to the list and select it
+      setExercises((prev) => [newExercise, ...prev])
+      setSelectedExercise(newExercise)
+      setCode(newExercise.generated_code || "")
+      setOutput("")
+      setHints("")
+      setSuggestions("")
+      setIsSuccess(false)
+      setEncouragement("")
+      setFocusArea("")
+      setShowDifficultySelection(false)
+    } catch (err) {
+      console.error("Error generating exercise:", err)
+      setError("Failed to generate exercise. Please try again.")
+    } finally {
+      setGeneratingExercise(false)
+    }
   }
 
   // Run the code
@@ -155,7 +204,7 @@ const PersonalizedExercisePage = () => {
     }
   }
 
-  // Create a new personalized exercise
+  // Create a new personalized exercise with custom question
   const handleCreateExercise = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newQuestion) return
@@ -164,11 +213,11 @@ const PersonalizedExercisePage = () => {
     try {
       const newExercise = await createPersonalizedExercise({
         question: newQuestion,
-        difficulty: newDifficulty,
+        difficulty: selectedDifficulty,
       })
 
       // Add the new exercise to the list and select it
-      setExercises((prev) => [...prev, newExercise])
+      setExercises((prev) => [newExercise, ...prev])
       setSelectedExercise(newExercise)
       setCode(newExercise.generated_code || "")
       setOutput("")
@@ -177,10 +226,10 @@ const PersonalizedExercisePage = () => {
       setIsSuccess(false)
       setEncouragement("")
       setFocusArea("")
+      setShowDifficultySelection(false)
 
       // Reset form and hide it
       setNewQuestion("")
-      setNewDifficulty("easy")
       setShowCreateForm(false)
     } catch (err) {
       console.error("Error creating exercise:", err)
@@ -194,6 +243,20 @@ const PersonalizedExercisePage = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+  }
+
+  // Reset to difficulty selection
+  const handleNewExercise = () => {
+    setSelectedExercise(null)
+    setShowDifficultySelection(true)
+    setCode("")
+    setOutput("")
+    setHints("")
+    setSuggestions("")
+    setIsSuccess(false)
+    setEncouragement("")
+    setFocusArea("")
+    setError("")
   }
 
   if (isLoading) {
@@ -234,7 +297,7 @@ const PersonalizedExercisePage = () => {
                 )}
               </button>
               <img
-                src="/images/ai-assistant.png"
+                src="/images/speaking.gif"
                 alt="AI Assistant"
                 className="w-16 h-16 rounded-full"
                 onError={(e) => {
@@ -253,7 +316,7 @@ const PersonalizedExercisePage = () => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">Your Exercises</h2>
                 <button
-                  onClick={() => setShowCreateForm(!showCreateForm)}
+                  onClick={handleNewExercise}
                   className="bg-[#10b3b3] hover:bg-[#0d9999] text-white p-2 rounded-full"
                   title="Create New Exercise"
                 >
@@ -265,7 +328,7 @@ const PersonalizedExercisePage = () => {
                 <form onSubmit={handleCreateExercise} className="mb-6 bg-gray-50 p-4 rounded-lg">
                   <div className="mb-4">
                     <label htmlFor="question" className="block text-sm font-medium text-gray-700 mb-1">
-                      Question
+                      Custom Question
                     </label>
                     <textarea
                       id="question"
@@ -283,8 +346,8 @@ const PersonalizedExercisePage = () => {
                     </label>
                     <select
                       id="difficulty"
-                      value={newDifficulty}
-                      onChange={(e) => setNewDifficulty(e.target.value as "easy" | "medium" | "hard")}
+                      value={selectedDifficulty}
+                      onChange={(e) => setSelectedDifficulty(e.target.value as "easy" | "medium" | "hard")}
                       className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3]"
                     >
                       <option value="easy">Easy</option>
@@ -314,7 +377,7 @@ const PersonalizedExercisePage = () => {
               {exercises.length === 0 ? (
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <p className="text-gray-500">No exercises yet.</p>
-                  <p className="text-gray-500 text-sm mt-2">Click the "+" button to create one!</p>
+                  <p className="text-gray-500 text-sm mt-2">Select a difficulty level to generate one!</p>
                 </div>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
@@ -336,7 +399,7 @@ const PersonalizedExercisePage = () => {
                         <span
                           className={`text-xs px-2 py-1 rounded-full border ${difficultyColors[exercise.difficulty]}`}
                         >
-                          {exercise.difficulty}
+                          {difficultyLabels[exercise.difficulty]}
                         </span>
                         <span className="text-xs text-gray-500">{formatDate(exercise.created_at)}</span>
                       </div>
@@ -360,9 +423,62 @@ const PersonalizedExercisePage = () => {
             </div>
           </div>
 
-          {/* Right Column - Code Editor and Output */}
+          {/* Right Column - Difficulty Selection or Code Editor */}
           <div className="md:col-span-2 space-y-6">
-            {selectedExercise ? (
+            {showDifficultySelection ? (
+              <div className="bg-white rounded-xl p-6 shadow-md">
+                <h2 className="text-xl font-bold mb-6 text-center">Select Difficulty Level</h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  {(["easy", "medium", "hard"] as const).map((difficulty) => (
+                    <button
+                      key={difficulty}
+                      onClick={() => setSelectedDifficulty(difficulty)}
+                      className={`p-6 rounded-xl border-2 transition-all ${
+                        selectedDifficulty === difficulty
+                          ? `border-[#10b3b3] ${difficultyColors[difficulty]} shadow-md`
+                          : "border-gray-200 hover:border-[#66cccc]"
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">
+                          {difficulty === "easy" ? "🌱" : difficulty === "medium" ? "🌿" : "🌲"}
+                        </div>
+                        <h3 className="font-bold mb-1">{difficultyLabels[difficulty]}</h3>
+                        <p className="text-sm text-gray-600">
+                          {difficulty === "easy"
+                            ? "Basic Python concepts"
+                            : difficulty === "medium"
+                              ? "Intermediate functions and logic"
+                              : "Advanced algorithms and techniques"}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={handleGenerateExercise}
+                    disabled={generatingExercise}
+                    className="bg-[#10b3b3] hover:bg-[#0d9999] text-white px-6 py-3 rounded-lg flex items-center shadow-md transition-transform transform hover:scale-105"
+                  >
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    {generatingExercise ? "Generating..." : "Generate Exercise"}
+                  </button>
+
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-gray-600">or</p>
+                    <button
+                      onClick={() => setShowCreateForm(true)}
+                      className="mt-2 text-[#10b3b3] hover:text-[#0d9999] font-medium"
+                    >
+                      Create a custom exercise
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : selectedExercise ? (
               <>
                 <div className="bg-white rounded-xl p-6 shadow-md">
                   <h2 className="text-xl font-bold mb-3">{selectedExercise.question}</h2>
@@ -371,7 +487,7 @@ const PersonalizedExercisePage = () => {
                     <span
                       className={`text-xs px-2 py-1 rounded-full border mr-3 ${difficultyColors[selectedExercise.difficulty]}`}
                     >
-                      {selectedExercise.difficulty}
+                      {difficultyLabels[selectedExercise.difficulty]}
                     </span>
                     <span className="text-xs text-gray-500">Attempts: {selectedExercise.attempts}</span>
                     {selectedExercise.is_completed && (
@@ -472,11 +588,11 @@ const PersonalizedExercisePage = () => {
                   Select an exercise from the list or create a new one to get started.
                 </p>
                 <button
-                  onClick={() => setShowCreateForm(true)}
+                  onClick={() => setShowDifficultySelection(true)}
                   className="bg-[#10b3b3] hover:bg-[#0d9999] text-white px-4 py-2 rounded-md flex items-center"
                 >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Create New Exercise
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  Generate New Exercise
                 </button>
               </div>
             )}

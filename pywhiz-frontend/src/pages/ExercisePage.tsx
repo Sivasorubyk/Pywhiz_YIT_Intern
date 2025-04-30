@@ -255,7 +255,7 @@ const ExercisePage = () => {
                 )}
               </button>
               <img
-                src="/images/ai-assistant.png"
+                src="/images/speaking.gif"
                 alt="AI Assistant"
                 className="w-16 h-16 rounded-full"
                 onError={(e) => {

@@ -522,9 +522,9 @@ class SubmitPersonalizedExerciseView(APIView):
                 progress.score += 20  # More points for personalized exercises
                 
                 # Add to completed exercises if not already
-                if exercise.is_completed and not exercise.milestone:
+                # if exercise.is_completed and not exercise.milestone:
                     # If we want to associate with a milestone later
-                    pass
+                    # pass
                 
                 progress.save()
 
