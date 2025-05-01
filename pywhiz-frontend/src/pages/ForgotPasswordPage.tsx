@@ -51,7 +51,7 @@ const ForgotPasswordPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#e6f7f7] to-white py-12">
+    <div className="overflow-hidden bg-gradient-to-b from-[#e6f7f7] to-white py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto bg-white rounded-2xl overflow-hidden shadow-lg">
           <div className="grid md:grid-cols-2">
@@ -87,7 +87,7 @@ const ForgotPasswordPage = () => {
                         className="input-field pl-10"
                         required
                       />
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     </div>
                   </div>
 
@@ -117,7 +117,7 @@ const ForgotPasswordPage = () => {
                         className="input-field pl-10"
                         required
                       />
-                      <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Key className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     </div>
                   </div>
 
@@ -133,7 +133,7 @@ const ForgotPasswordPage = () => {
                         className="input-field pl-10"
                         required
                       />
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                     </div>
                   </div>
 
@@ -164,7 +164,7 @@ const ForgotPasswordPage = () => {
             {/* Right side - Image */}
             <div className="hidden md:block bg-[#e6f7f7] relative">
               <img 
-                src="/placeholder.svg?height=600&width=500" 
+                src="images/Signupin.jpeg" 
                 alt="Python Learning" 
                 className="w-full h-full object-cover"
               />
