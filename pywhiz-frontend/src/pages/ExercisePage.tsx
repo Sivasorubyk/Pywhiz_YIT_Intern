@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Volume2, VolumeX, CheckCircle, AlertCircle, RefreshCw } from "lucide-react"
+import { Volume2, VolumeX, CheckCircle, AlertCircle, RefreshCw, RotateCcw } from "lucide-react"
 import confetti from "canvas-confetti"
 import { useAuth } from "../contexts/AuthContext"
 import {
@@ -32,6 +32,7 @@ const ExercisePage = () => {
   const [allQuestionsAnswered, setAllQuestionsAnswered] = useState(false)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [localMilestoneAchieved, setLocalMilestoneAchieved] = useState(false)
+  const [isReviewMode, setIsReviewMode] = useState(false)
 
   // Fetch milestone and MCQ questions
   useEffect(() => {
@@ -52,10 +53,18 @@ const ExercisePage = () => {
 
         // Fetch MCQ questions for this milestone
         const questions = await fetchMCQQuestions(milestoneId!)
-        setMcqQuestions(questions)
+        console.log("Fetched MCQ questions:", questions)
+
+        if (questions && questions.length > 0) {
+          setMcqQuestions(questions)
+        } else {
+          console.error("No questions returned from API")
+          setError("No questions available for this milestone")
+        }
 
         // Check if exercise was previously completed using the backend
-        if (milestoneId && isExerciseCompleted(milestoneId)) {
+        const completed = milestoneId && isExerciseCompleted(milestoneId)
+        if (completed) {
           setShowResults(true)
           setMilestoneAchieved(true)
         }
@@ -125,7 +134,7 @@ const ExercisePage = () => {
     setExplanations(newExplanations)
     setShowResults(true)
 
-    if (allCorrect) {
+    if (allCorrect && !isReviewMode) {
       setMilestoneAchieved(true)
       setLocalMilestoneAchieved(true)
 
@@ -196,6 +205,14 @@ const ExercisePage = () => {
     }
   }
 
+  const handleReviewMode = () => {
+    setIsReviewMode(true)
+    setShowResults(false)
+    setAnswers({})
+    setResults({})
+    setExplanations({})
+  }
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -230,10 +247,21 @@ const ExercisePage = () => {
 
         <div className="flex justify-between items-start mb-6">
           <h1 className="text-2xl font-bold">{milestone.title} - Exercise</h1>
-          <button onClick={handleReset} className="text-red-500 hover:text-red-600 flex items-center text-sm">
-            <RefreshCw className="h-4 w-4 mr-1" />
-            Reset Progress
-          </button>
+          <div className="flex space-x-4">
+            {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && (
+              <button
+                onClick={handleReviewMode}
+                className="text-blue-500 hover:text-blue-600 flex items-center text-sm"
+              >
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Practice Again
+              </button>
+            )}
+            <button onClick={handleReset} className="text-red-500 hover:text-red-600 flex items-center text-sm">
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Reset Progress
+            </button>
+          </div>
         </div>
 
         <div className="bg-[#e6f7f7] rounded-xl p-6 shadow-md mb-8">
@@ -255,7 +283,7 @@ const ExercisePage = () => {
                 )}
               </button>
               <img
-                src="/images/speaking.gif"
+                src="/images/ai-assistant.png"
                 alt="AI Assistant"
                 className="w-16 h-16 rounded-full"
                 onError={(e) => {
@@ -267,18 +295,33 @@ const ExercisePage = () => {
           </div>
         </div>
 
-        {milestoneAchieved ||
-          (localMilestoneAchieved && (
-            <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-8 flex items-center">
-              <CheckCircle className="h-6 w-6 mr-3 text-green-500" />
-              <div>
-                <h3 className="font-bold">Congratulations!</h3>
-                <p>You've completed {milestone.title}! Keep up the great work.</p>
-              </div>
+        {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && (
+          <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-8 flex items-center">
+            <CheckCircle className="h-6 w-6 mr-3 text-green-500" />
+            <div>
+              <h3 className="font-bold">Congratulations!</h3>
+              <p>You've completed {milestone.title}! Keep up the great work.</p>
+              <button
+                onClick={handleReviewMode}
+                className="mt-2 text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+              >
+                Practice Again
+              </button>
             </div>
-          ))}
+          </div>
+        )}
 
-        {(milestoneAchieved || localMilestoneAchieved) && (
+        {isReviewMode && (
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 rounded-xl p-4 mb-8 flex items-center">
+            <RotateCcw className="h-6 w-6 mr-3 text-blue-500" />
+            <div>
+              <h3 className="font-bold">Review Mode</h3>
+              <p>You're reviewing this exercise. Your answers won't affect your progress.</p>
+            </div>
+          </div>
+        )}
+
+        {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && (
           <div className="fixed bottom-4 right-4 z-40 bg-white rounded-lg shadow-lg p-2 max-w-xs animate-bounce">
             <div className="flex items-center">
               <img
@@ -314,20 +357,20 @@ const ExercisePage = () => {
                 )}
               </div>
               <div className="relative">
+                {/* Use a regular HTML select element */}
                 <select
                   value={answers[question.id] || ""}
                   onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                   className="w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-[#10b3b3]"
-                  disabled={showResults}
+                  disabled={showResults && !isReviewMode}
                 >
                   <option value="" disabled>
                     Select
                   </option>
-                  {Object.entries(question.options).map(([key, value]) => (
-                    <option key={key} value={key}>
-                      {value}
-                    </option>
-                  ))}
+                  <option value="A">{question.options?.A || "Option A"}</option>
+                  <option value="B">{question.options?.B || "Option B"}</option>
+                  <option value="C">{question.options?.C || "Option C"}</option>
+                  <option value="D">{question.options?.D || "Option D"}</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                   <svg
@@ -361,7 +404,7 @@ const ExercisePage = () => {
             Previous
           </button>
 
-          {!showResults ? (
+          {!showResults || isReviewMode ? (
             <button
               onClick={handleCheck}
               disabled={!allQuestionsAnswered}

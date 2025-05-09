@@ -94,6 +94,9 @@ export interface PersonalizedExercise {
   attempts: number
   created_at: string
   updated_at: string
+  encouragement?: string
+  focus_area?: string
+  is_first_attempt?: boolean
 }
 
 // API functions
@@ -118,8 +121,35 @@ export const submitCode = async (questionId: string, code: string): Promise<Code
 }
 
 export const fetchMCQQuestions = async (milestoneId: string): Promise<MCQQuestion[]> => {
-  const response = await api.get(`/learn/milestones/${milestoneId}/mcq-questions/`)
-  return response.data
+  try {
+    const response = await api.get(`/learn/milestones/${milestoneId}/mcq-questions/`)
+    console.log("MCQ API response:", response.data)
+
+    // Ensure we have valid data
+    if (!response.data || !Array.isArray(response.data)) {
+      console.error("Invalid MCQ questions data format:", response.data)
+      return []
+    }
+
+    // Process each question to ensure options are valid
+    const questions = response.data.map((question: MCQQuestion) => {
+      if (!question.options || typeof question.options !== "object") {
+        console.warn(`Question ${question.id} has invalid options, using defaults`)
+        question.options = {
+          A: "Takes input from user",
+          B: "Prints text/output",
+          C: "Adds numbers",
+          D: "None of these",
+        }
+      }
+      return question
+    })
+
+    return questions
+  } catch (error) {
+    console.error("Error fetching MCQ questions:", error)
+    throw error
+  }
 }
 
 export const submitMCQAnswer = async (questionId: string, selectedOption: string): Promise<MCQSubmissionResponse> => {
