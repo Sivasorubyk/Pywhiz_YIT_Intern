@@ -128,7 +128,7 @@ const HomePage = () => {
           <div className="rounded-xl overflow-hidden shadow-lg border-4 border-[#10b3b3]">
             <div className="relative aspect-w-16 aspect-h-9 bg-black">
               <video className="w-full h-full object-cover" controls playsInline poster="/images/intro.jpeg">
-                <source src="/videos/intro.mp4" type="video/mp4" />
+                <source src="https://d3t4ndznqmxbjg.cloudfront.net/01.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </div>
@@ -172,7 +172,7 @@ const HomePage = () => {
         <div className="max-w-4xl mx-auto rounded-xl overflow-hidden shadow-xl border-4 border-[#10b3b3]">
           <div className="relative aspect-w-16 aspect-h-9 bg-black">
             <video className="w-full h-full object-cover" controls poster="/images/intro.jpeg">
-              <source src="/videos/intro.mp4" type="video/mp4" />
+              <source src="https://d3t4ndznqmxbjg.cloudfront.net/01.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
           </div>

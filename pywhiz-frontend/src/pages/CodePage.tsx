@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import type React from "react"
+
+import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Volume2, VolumeX, AlertCircle, CheckCircle, RefreshCw } from "lucide-react"
+import { Volume2, VolumeX, AlertCircle, CheckCircle, RefreshCw, Send } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import {
   fetchCodeQuestions,
@@ -14,8 +16,8 @@ import {
 
 const CodePage = () => {
   const navigate = useNavigate()
-  const { milestoneId } = useParams<{ milestoneId: string }>()
   const { userProgress, isCodeCompleted, markCodeCompleted, resetMilestoneProgress } = useAuth()
+  const { milestoneId } = useParams()
 
   const [milestone, setMilestone] = useState<Milestone | null>(null)
   const [codeQuestion, setCodeQuestion] = useState<CodeQuestion | null>(null)
@@ -30,6 +32,11 @@ const CodePage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [localCodeSuccess, setLocalCodeSuccess] = useState(false)
+  const [waitingForInput, setWaitingForInput] = useState(false)
+  const [userInput, setUserInput] = useState("")
+  const [userInputs, setUserInputs] = useState<string[]>([])
+  const [stdoutSoFar, setStdoutSoFar] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Fetch milestone and code questions
   useEffect(() => {
@@ -83,6 +90,13 @@ const CodePage = () => {
     }
   }, [milestoneId])
 
+  // Focus input field when waiting for input
+  useEffect(() => {
+    if (waitingForInput && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [waitingForInput])
+
   // Modify handleRunCode to store success state in the backend
   const handleRunCode = async () => {
     if (!codeQuestion || !milestoneId) return
@@ -93,9 +107,20 @@ const CodePage = () => {
     setSuggestions("")
     setError("")
     setIsSuccess(false)
+    setWaitingForInput(false)
+    setUserInputs([])
+    setStdoutSoFar("")
 
     try {
-      const response = await submitCode(codeQuestion.id, code)
+      const response = await submitCode(codeQuestion.id, code, userInputs)
+
+      // Check if the program is waiting for input
+      if (response.status === "input_required") {
+        setWaitingForInput(true)
+        setStdoutSoFar(response.stdout_so_far || "")
+        setIsRunning(false)
+        return
+      }
 
       // Extract data from response
       setOutput(response.output || "No output")
@@ -115,6 +140,61 @@ const CodePage = () => {
       console.error("Error submitting code:", err)
       setError(err.response?.data?.detail || "Error running code. Please try again.")
       setOutput(err.response?.data?.output || "")
+    } finally {
+      setIsRunning(false)
+    }
+  }
+
+  const handleInputSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!userInput.trim()) return
+
+    // Add the current input to the list
+    const newInputs = [...userInputs, userInput]
+    setUserInputs(newInputs)
+
+    // Clear the input field
+    setUserInput("")
+
+    // Show the input in the output area
+    setStdoutSoFar((prev) => `${prev}\n${userInput}`)
+
+    // Run the code again with the updated inputs
+    setIsRunning(true)
+    setWaitingForInput(false)
+
+    try {
+      const response = await submitCode(codeQuestion!.id, code, newInputs)
+
+      // Check if the program is still waiting for more input
+      if (response.status === "input_required") {
+        setWaitingForInput(true)
+        setStdoutSoFar(response.stdout_so_far || "")
+        setIsRunning(false)
+        return
+      }
+
+      // If we got a complete response, show it
+      setOutput(response.output || "No output")
+      setHints(response.hints || "")
+      setSuggestions(response.suggestions || "")
+      setWaitingForInput(false)
+
+      // If we got a response without errors, consider it successful
+      setIsSuccess(response.is_correct)
+
+      // Store success in backend and localStorage
+      if (response.is_correct) {
+        markCodeCompleted(milestoneId!)
+        localStorage.setItem(`code_success_${milestoneId!}`, "true")
+        setLocalCodeSuccess(true)
+      }
+    } catch (err: any) {
+      console.error("Error submitting code with input:", err)
+      setError(err.response?.data?.detail || "Error running code. Please try again.")
+      setOutput(err.response?.data?.output || "")
+      setWaitingForInput(false)
     } finally {
       setIsRunning(false)
     }
@@ -142,6 +222,9 @@ const CodePage = () => {
       setHints("")
       setSuggestions("")
       setShowResetConfirmation(false)
+      setWaitingForInput(false)
+      setUserInputs([])
+      setStdoutSoFar("")
 
       // Reset code to example code
       if (codeQuestion) {
@@ -250,8 +333,27 @@ const CodePage = () => {
               )}
 
               <div className="text-gray-700">
-                {output ? (
-                  <pre className="bg-gray-100 p-3 rounded-md overflow-auto max-h-48 text-sm">{output}</pre>
+                {waitingForInput ? (
+                  <div className="bg-gray-100 p-3 rounded-md overflow-auto max-h-48 text-sm">
+                    <pre className="whitespace-pre-wrap">{stdoutSoFar}</pre>
+                    <form onSubmit={handleInputSubmit} className="mt-2 flex">
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={userInput}
+                        onChange={(e) => setUserInput(e.target.value)}
+                        className="flex-grow p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3]"
+                        placeholder="Enter your input..."
+                      />
+                      <button type="submit" className="bg-[#10b3b3] text-white p-2 rounded-r-md hover:bg-[#0d9999]">
+                        <Send className="h-4 w-4" />
+                      </button>
+                    </form>
+                  </div>
+                ) : output ? (
+                  <pre className="bg-gray-100 p-3 rounded-md overflow-auto max-h-48 text-sm whitespace-pre-wrap">
+                    {output}
+                  </pre>
                 ) : (
                   <p>Run your code to see the output here.</p>
                 )}

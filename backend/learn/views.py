@@ -25,6 +25,21 @@ logger = logging.getLogger(__name__)
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
+from googletrans import Translator
+
+def translate_to_tamil(text):
+    """Translate text to Tamil if it's not already in Tamil"""
+    try:
+        translator = Translator()
+        detected_lang = translator.detect(text).lang
+        if detected_lang != 'ta':  # If not Tamil
+            translated = translator.translate(text, dest='ta')
+            return translated.text
+        return text
+    except Exception as e:
+        logger.error(f"Translation error: {str(e)}")
+        return text  # Return original if translation fails
+
 class MilestoneListView(generics.ListAPIView):
     queryset = Milestone.objects.filter(is_active=True).order_by('order')
     serializer_class = MilestoneSerializer
@@ -54,18 +69,26 @@ class SubmitCodeView(APIView):
             question = CodeQuestion.objects.get(id=question_id)
             user = request.user
             user_code = request.data.get("code", "")
+            user_inputs = request.data.get("inputs", [])  # List of inputs for input() calls
 
             if not user_code:
                 return Response({"error": "No code provided"}, status=400)
 
-            # 🧪 1. Execute the code using Piston
+            # 🧪 1. Execute the code using Piston with input support
+            piston_payload = {
+                "language": "python3",
+                "version": "3.10.0",
+                "files": [{"name": "main.py", "content": user_code}],
+            }
+            
+            # Add stdin if there are user inputs
+            if user_inputs:
+                piston_payload["stdin"] = "\n".join(user_inputs) + "\n"
+
             piston_response = requests.post(
                 settings.PISTON_EXECUTE_URL,
-                json={
-                    "language": "python3",
-                    "version": "3.10.0",
-                    "files": [{"name": "main.py", "content": user_code}],
-                },
+                json=piston_payload,
+                timeout=10  # Add timeout to prevent hanging
             )
 
             if piston_response.status_code != 200:
@@ -74,6 +97,19 @@ class SubmitCodeView(APIView):
             result = piston_response.json().get("run", {})
             stdout = result.get("stdout", "").strip()
             stderr = result.get("stderr", "").strip()
+
+            # Translate error messages to Tamil
+            if stderr:
+                stderr = translate_to_tamil(stderr)
+
+            # Check if the program is waiting for input
+            if "EOFError: EOF when reading a line" in stderr:
+                translated_message = translate_to_tamil("This program requires input")
+                return Response({
+                    "status": "input_required",
+                    "message": translated_message,
+                    "stdout_so_far": stdout  # Keep stdout in original language
+                }, status=200)
 
             # 🧠 2. Call OpenAI with the real output
             prompt = (
@@ -119,9 +155,17 @@ class SubmitCodeView(APIView):
                         {"error": "Incomplete feedback from AI"}, status=500
                     )
 
-            # If there was no output from execution, use AI's analysis as output
-            if not stdout and not stderr:
-                feedback["output"] = "Code executed successfully. " + feedback["output"]
+            # If there was output from execution, prepend it to the feedback
+            if stdout:
+                success_msg = translate_to_tamil("Code executed successfully!")
+                feedback["output"] = f"{success_msg}\nOutput:\n{stdout}\n\n{feedback['output']}"
+            elif not stderr:
+                success_msg = translate_to_tamil("Code executed successfully!")
+                feedback["output"] = f"{success_msg}\n" + feedback["output"]
+
+            # Translate hints and suggestions to Tamil
+            feedback["hints"] = translate_to_tamil(feedback["hints"])
+            feedback["suggestions"] = translate_to_tamil(feedback["suggestions"])
 
             # 📝 5. Save to database
             answer, _ = UserCodeAnswer.objects.update_or_create(
@@ -150,6 +194,7 @@ class SubmitCodeView(APIView):
             logger.error(f"Error in SubmitCodeView: {str(e)}", exc_info=True)
             return Response({"error": "Failed to evaluate code"}, status=500)
 
+            
 class MCQQuestionView(generics.ListAPIView):
     serializer_class = MCQQuestionSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -424,18 +469,26 @@ class SubmitPersonalizedExerciseView(APIView):
         try:
             exercise = PersonalizedExercise.objects.get(id=exercise_id, user=request.user)
             user_code = request.data.get("code", "")
+            user_inputs = request.data.get("inputs", [])  # List of inputs for input() calls
 
             if not user_code:
                 return Response({"error": "No code provided"}, status=400)
 
-            # 1. Execute the code using Piston
+            # 1. Execute the code using Piston with input support
+            piston_payload = {
+                "language": "python3",
+                "version": "3.10.0",
+                "files": [{"name": "main.py", "content": user_code}],
+            }
+            
+            # Add stdin if there are user inputs
+            if user_inputs:
+                piston_payload["stdin"] = "\n".join(user_inputs) + "\n"
+
             piston_response = requests.post(
                 settings.PISTON_EXECUTE_URL,
-                json={
-                    "language": "python3",
-                    "version": "3.10.0",
-                    "files": [{"name": "main.py", "content": user_code}],
-                },
+                json=piston_payload,
+                timeout=10  # Add timeout to prevent hanging
             )
 
             if piston_response.status_code != 200:
@@ -444,6 +497,19 @@ class SubmitPersonalizedExerciseView(APIView):
             result = piston_response.json().get("run", {})
             stdout = result.get("stdout", "").strip()
             stderr = result.get("stderr", "").strip()
+
+            # Translate error messages to Tamil
+            if stderr:
+                stderr = translate_to_tamil(stderr)
+
+            # Check if the program is waiting for input
+            if "EOFError: EOF when reading a line" in stderr:
+                translated_message = translate_to_tamil("This program requires input")
+                return Response({
+                    "status": "input_required",
+                    "message": translated_message,
+                    "stdout_so_far": stdout  # Keep stdout in original language
+                }, status=200)
 
             # 2. Call OpenAI with the real output for kid-friendly feedback
             prompt = (
@@ -507,6 +573,19 @@ class SubmitPersonalizedExerciseView(APIView):
             if isinstance(suggestions, list):
                 suggestions = "\n".join([f"• {suggestion}" for suggestion in suggestions])
 
+            # Prepend the actual output to the feedback
+            if stdout:
+                success_msg = translate_to_tamil("Code executed successfully!")
+                feedback["output"] = f"{success_msg}\nOutput:\n{stdout}\n\n{feedback['output']}"
+            elif not stderr:
+                success_msg = translate_to_tamil("Code executed successfully!")
+                feedback["output"] = f"{success_msg}\n" + feedback["output"]
+
+            # Translate feedback elements to Tamil
+            feedback["hints"] = [translate_to_tamil(hint) if isinstance(feedback["hints"], list) else translate_to_tamil(feedback["hints"])]
+            feedback["suggestions"] = [translate_to_tamil(suggestion) if isinstance(feedback["suggestions"], list) else translate_to_tamil(feedback["suggestions"])]
+            feedback["encouragement"] = translate_to_tamil(feedback["encouragement"])
+
             # 6. Update the exercise
             exercise.generated_code = user_code
             exercise.output = feedback["output"]
@@ -520,12 +599,6 @@ class SubmitPersonalizedExerciseView(APIView):
             if feedback["is_correct"]:
                 progress = UserProgress.objects.get(user=request.user)
                 progress.score += 20  # More points for personalized exercises
-                
-                # Add to completed exercises if not already
-                # if exercise.is_completed and not exercise.milestone:
-                    # If we want to associate with a milestone later
-                    # pass
-                
                 progress.save()
 
             # 8. Prepare response with encouragement

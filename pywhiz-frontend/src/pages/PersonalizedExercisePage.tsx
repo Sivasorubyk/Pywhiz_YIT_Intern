@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-import { Volume2, VolumeX, AlertCircle, CheckCircle, Plus, BarChart4, Code, Sparkles } from "lucide-react"
+import { Volume2, VolumeX, AlertCircle, CheckCircle, Plus, BarChart4, Code, Sparkles, Send } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import confetti from "canvas-confetti"
 import {
@@ -50,6 +50,11 @@ const PersonalizedExercisePage = () => {
   const [isFirstAttempt, setIsFirstAttempt] = useState(false)
   const [showDifficultySelection, setShowDifficultySelection] = useState(true)
   const [generatingExercise, setGeneratingExercise] = useState(false)
+  const [waitingForInput, setWaitingForInput] = useState(false)
+  const [userInput, setUserInput] = useState("")
+  const [userInputs, setUserInputs] = useState<string[]>([])
+  const [stdoutSoFar, setStdoutSoFar] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     // Check if user has completed 15 milestones
@@ -81,6 +86,13 @@ const PersonalizedExercisePage = () => {
     loadExercises()
   }, [])
 
+  // Focus input field when waiting for input
+  useEffect(() => {
+    if (waitingForInput && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [waitingForInput])
+
   // Select a different exercise
   const handleSelectExercise = (exercise: PersonalizedExercise) => {
     setSelectedExercise(exercise)
@@ -89,6 +101,9 @@ const PersonalizedExercisePage = () => {
     setHints(exercise.hints || "")
     setSuggestions(exercise.suggestions || "")
     setShowDifficultySelection(false)
+    setWaitingForInput(false)
+    setUserInputs([])
+    setStdoutSoFar("")
 
     // Check localStorage for completed state
     const storedSuccess = localStorage.getItem(`personalized_success_${exercise.id}`)
@@ -140,6 +155,9 @@ const PersonalizedExercisePage = () => {
       setEncouragement("")
       setFocusArea("")
       setShowDifficultySelection(false)
+      setWaitingForInput(false)
+      setUserInputs([])
+      setStdoutSoFar("")
     } catch (err) {
       console.error("Error generating exercise:", err)
       setError("Failed to generate exercise. Please try again.")
@@ -160,9 +178,20 @@ const PersonalizedExercisePage = () => {
     setIsSuccess(false)
     setEncouragement("")
     setFocusArea("")
+    setWaitingForInput(false)
+    setUserInputs([])
+    setStdoutSoFar("")
 
     try {
-      const response = await submitPersonalizedExercise(selectedExercise.id, code)
+      const response = await submitPersonalizedExercise(selectedExercise.id, code, userInputs)
+
+      // Check if the program is waiting for input
+      if (response.status === "input_required") {
+        setWaitingForInput(true)
+        setStdoutSoFar(response.stdout_so_far || "")
+        setIsRunning(false)
+        return
+      }
 
       // Update the exercise in the list
       setExercises((prev) => prev.map((ex) => (ex.id === response.id ? response : ex)))
@@ -204,6 +233,78 @@ const PersonalizedExercisePage = () => {
     }
   }
 
+  const handleInputSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!userInput.trim() || !selectedExercise) return
+
+    // Add the current input to the list
+    const newInputs = [...userInputs, userInput]
+    setUserInputs(newInputs)
+
+    // Clear the input field
+    setUserInput("")
+
+    // Show the input in the output area
+    setStdoutSoFar((prev) => `${prev}\n${userInput}`)
+
+    // Run the code again with the updated inputs
+    setIsRunning(true)
+    setWaitingForInput(false)
+
+    try {
+      const response = await submitPersonalizedExercise(selectedExercise.id, code, newInputs)
+
+      // Check if the program is still waiting for more input
+      if (response.status === "input_required") {
+        setWaitingForInput(true)
+        setStdoutSoFar(response.stdout_so_far || "")
+        setIsRunning(false)
+        return
+      }
+
+      // Update the exercise in the list
+      setExercises((prev) => prev.map((ex) => (ex.id === response.id ? response : ex)))
+
+      // Update the selected exercise
+      setSelectedExercise(response)
+
+      // Extract data from response
+      setOutput(response.output || "No output")
+      setHints(response.hints || "")
+      setSuggestions(response.suggestions || "")
+      setIsSuccess(response.is_completed)
+      setWaitingForInput(false)
+
+      // Set encouragement and focus area if available
+      if (response.encouragement) {
+        setEncouragement(response.encouragement)
+      }
+
+      if (response.focus_area) {
+        setFocusArea(response.focus_area)
+      }
+
+      setIsFirstAttempt(response.is_first_attempt || false)
+
+      // If successful, show confetti effect and store in localStorage
+      if (response.is_completed) {
+        localStorage.setItem(`personalized_success_${response.id}`, "true")
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+        })
+      }
+    } catch (err: any) {
+      console.error("Error submitting exercise with input:", err)
+      setError(err.response?.data?.error || "Error running code. Please try again.")
+      setWaitingForInput(false)
+    } finally {
+      setIsRunning(false)
+    }
+  }
+
   // Create a new personalized exercise with custom question
   const handleCreateExercise = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -227,6 +328,9 @@ const PersonalizedExercisePage = () => {
       setEncouragement("")
       setFocusArea("")
       setShowDifficultySelection(false)
+      setWaitingForInput(false)
+      setUserInputs([])
+      setStdoutSoFar("")
 
       // Reset form and hide it
       setNewQuestion("")
@@ -257,6 +361,9 @@ const PersonalizedExercisePage = () => {
     setEncouragement("")
     setFocusArea("")
     setError("")
+    setWaitingForInput(false)
+    setUserInputs([])
+    setStdoutSoFar("")
   }
 
   if (isLoading) {
@@ -297,7 +404,7 @@ const PersonalizedExercisePage = () => {
                 )}
               </button>
               <img
-                src="/images/speaking.gif"
+                src="/images/ai-assistant.png"
                 alt="AI Assistant"
                 className="w-16 h-16 rounded-full"
                 onError={(e) => {
@@ -548,8 +655,30 @@ const PersonalizedExercisePage = () => {
                     )}
 
                     <div className="text-gray-700 mb-4">
-                      {output ? (
-                        <pre className="bg-gray-100 p-3 rounded-md overflow-auto max-h-48 text-sm">{output}</pre>
+                      {waitingForInput ? (
+                        <div className="bg-gray-100 p-3 rounded-md overflow-auto max-h-48 text-sm">
+                          <pre className="whitespace-pre-wrap">{stdoutSoFar}</pre>
+                          <form onSubmit={handleInputSubmit} className="mt-2 flex">
+                            <input
+                              ref={inputRef}
+                              type="text"
+                              value={userInput}
+                              onChange={(e) => setUserInput(e.target.value)}
+                              className="flex-grow p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3]"
+                              placeholder="Enter your input..."
+                            />
+                            <button
+                              type="submit"
+                              className="bg-[#10b3b3] text-white p-2 rounded-r-md hover:bg-[#0d9999]"
+                            >
+                              <Send className="h-4 w-4" />
+                            </button>
+                          </form>
+                        </div>
+                      ) : output ? (
+                        <pre className="bg-gray-100 p-3 rounded-md overflow-auto max-h-48 text-sm whitespace-pre-wrap">
+                          {output}
+                        </pre>
                       ) : (
                         <p>Run your code to see the output here.</p>
                       )}

@@ -68,6 +68,9 @@ export interface CodeSubmissionResponse {
   suggestions: string
   is_correct: boolean
   attempts: number
+  status?: string
+  message?: string
+  stdout_so_far?: string
 }
 
 export interface MCQSubmissionResponse {
@@ -97,6 +100,9 @@ export interface PersonalizedExercise {
   encouragement?: string
   focus_area?: string
   is_first_attempt?: boolean
+  status?: string
+  message?: string
+  stdout_so_far?: string
 }
 
 // API functions
@@ -115,41 +121,18 @@ export const fetchCodeQuestions = async (milestoneId: string): Promise<CodeQuest
   return response.data
 }
 
-export const submitCode = async (questionId: string, code: string): Promise<CodeSubmissionResponse> => {
-  const response = await api.post(`/learn/questions/${questionId}/submit/`, { code })
+export const submitCode = async (
+  questionId: string,
+  code: string,
+  inputs: string[] = [],
+): Promise<CodeSubmissionResponse> => {
+  const response = await api.post(`/learn/questions/${questionId}/submit/`, { code, inputs })
   return response.data
 }
 
 export const fetchMCQQuestions = async (milestoneId: string): Promise<MCQQuestion[]> => {
-  try {
-    const response = await api.get(`/learn/milestones/${milestoneId}/mcq-questions/`)
-    console.log("MCQ API response:", response.data)
-
-    // Ensure we have valid data
-    if (!response.data || !Array.isArray(response.data)) {
-      console.error("Invalid MCQ questions data format:", response.data)
-      return []
-    }
-
-    // Process each question to ensure options are valid
-    const questions = response.data.map((question: MCQQuestion) => {
-      if (!question.options || typeof question.options !== "object") {
-        console.warn(`Question ${question.id} has invalid options, using defaults`)
-        question.options = {
-          A: "Takes input from user",
-          B: "Prints text/output",
-          C: "Adds numbers",
-          D: "None of these",
-        }
-      }
-      return question
-    })
-
-    return questions
-  } catch (error) {
-    console.error("Error fetching MCQ questions:", error)
-    throw error
-  }
+  const response = await api.get(`/learn/milestones/${milestoneId}/mcq-questions/`)
+  return response.data
 }
 
 export const submitMCQAnswer = async (questionId: string, selectedOption: string): Promise<MCQSubmissionResponse> => {
@@ -180,7 +163,11 @@ export const createPersonalizedExercise = async (data: {
   return response.data
 }
 
-export const submitPersonalizedExercise = async (exerciseId: string, code: string): Promise<PersonalizedExercise> => {
-  const response = await api.post(`/learn/personalized-exercises/${exerciseId}/submit/`, { code })
+export const submitPersonalizedExercise = async (
+  exerciseId: string,
+  code: string,
+  inputs: string[] = [],
+): Promise<PersonalizedExercise> => {
+  const response = await api.post(`/learn/personalized-exercises/${exerciseId}/submit/`, { code, inputs })
   return response.data
 }

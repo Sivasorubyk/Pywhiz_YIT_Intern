@@ -209,7 +209,7 @@ const LearnPage = () => {
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
-                poster="/images/video-thumbnail.jpg"
+                poster="/images/intro.jpeg"
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
                 onEnded={() => setVideoWatched(true)}
