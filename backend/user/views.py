@@ -39,7 +39,7 @@ class RegisterView(generics.CreateAPIView):
         # Generate OTP
         otp = ''.join(random.choices(string.digits, k=6))
         user.otp = otp
-        user.otp_created_at = datetime.now()
+        user.otp_created_at = timezone.now()
         user.save()
         
         # Send email with OTP
@@ -144,7 +144,7 @@ class PasswordResetRequestView(APIView):
         # Generate OTP
         otp = ''.join(random.choices(string.digits, k=6))
         user.otp = otp
-        user.otp_created_at = datetime.now()
+        user.otp_created_at = timezone.now()
         user.save()
         
         # Send email with OTP

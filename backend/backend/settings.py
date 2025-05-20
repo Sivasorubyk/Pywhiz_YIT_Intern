@@ -146,6 +146,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
+    {
+        'NAME': 'user.validators.LetterNumberValidator',  # Add this new validator
+    },
 ]
 
 # Internationalization
