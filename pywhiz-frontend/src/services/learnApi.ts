@@ -25,9 +25,9 @@ export interface LearnContent {
 export interface CodeQuestion {
   id: string
   milestone: string
-  question: string
+  question: string // This may contain HTML formatting
   example_code: string
-  hint: string
+  hint: string // This may contain HTML formatting
   created_at: string
   updated_at: string
 }
@@ -35,10 +35,10 @@ export interface CodeQuestion {
 export interface MCQQuestion {
   id: string
   milestone: string
-  question_text: string
+  question_text: string // This may contain HTML formatting
   options: Record<string, string>
   correct_answer: string
-  explanation: string
+  explanation: string // This may contain HTML formatting
   order: number
   created_at: string
   updated_at: string
@@ -76,7 +76,7 @@ export interface CodeSubmissionResponse {
 export interface MCQSubmissionResponse {
   is_correct: boolean
   correct_answer: string
-  explanation: string
+  explanation: string // This may contain HTML formatting
 }
 
 // New interface for personalized exercises
@@ -125,8 +125,12 @@ export const submitCode = async (
   questionId: string,
   code: string,
   inputs: string[] = [],
+  stdin?: string,
 ): Promise<CodeSubmissionResponse> => {
-  const response = await api.post(`/learn/questions/${questionId}/submit/`, { code, inputs })
+  // If stdin is provided, use it instead of inputs array
+  const payload = stdin !== undefined ? { code, stdin } : { code, inputs }
+
+  const response = await api.post(`/learn/questions/${questionId}/submit/`, payload)
   return response.data
 }
 

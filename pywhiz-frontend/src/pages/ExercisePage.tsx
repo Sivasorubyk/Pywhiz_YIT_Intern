@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Volume2, VolumeX, CheckCircle, AlertCircle, RefreshCw, RotateCcw } from "lucide-react"
+import { Volume2, VolumeX, CheckCircle, AlertCircle, RotateCcw } from "lucide-react"
 import confetti from "canvas-confetti"
 import { useAuth } from "../contexts/AuthContext"
 import {
@@ -16,8 +16,7 @@ import {
 const ExercisePage = () => {
   const navigate = useNavigate()
   const { milestoneId } = useParams<{ milestoneId: string }>()
-  const { userProgress, updateUserProgress, markExerciseCompleted, isExerciseCompleted, resetMilestoneProgress } =
-    useAuth()
+  const { userProgress, updateUserProgress, markExerciseCompleted, isExerciseCompleted } = useAuth()
 
   const [milestone, setMilestone] = useState<Milestone | null>(null)
   const [mcqQuestions, setMcqQuestions] = useState<MCQQuestion[]>([])
@@ -30,7 +29,6 @@ const ExercisePage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [allQuestionsAnswered, setAllQuestionsAnswered] = useState(false)
-  const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [localMilestoneAchieved, setLocalMilestoneAchieved] = useState(false)
   const [isReviewMode, setIsReviewMode] = useState(false)
 
@@ -187,24 +185,6 @@ const ExercisePage = () => {
     navigate(`/code/${milestoneId}`)
   }
 
-  const handleReset = () => {
-    setShowResetConfirmation(true)
-  }
-
-  const confirmReset = async () => {
-    if (milestoneId) {
-      await resetMilestoneProgress(milestoneId)
-      setAnswers({})
-      setResults({})
-      setExplanations({})
-      setShowResults(false)
-      setMilestoneAchieved(false)
-      setLocalMilestoneAchieved(false)
-      localStorage.removeItem(`exercise_completed_${milestoneId}`)
-      setShowResetConfirmation(false)
-    }
-  }
-
   const handleReviewMode = () => {
     setIsReviewMode(true)
     setShowResults(false)
@@ -247,21 +227,12 @@ const ExercisePage = () => {
 
         <div className="flex justify-between items-start mb-6">
           <h1 className="text-2xl font-bold">{milestone.title} - Exercise</h1>
-          <div className="flex space-x-4">
-            {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && (
-              <button
-                onClick={handleReviewMode}
-                className="text-blue-500 hover:text-blue-600 flex items-center text-sm"
-              >
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Practice Again
-              </button>
-            )}
-            <button onClick={handleReset} className="text-red-500 hover:text-red-600 flex items-center text-sm">
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Reset Progress
+          {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && (
+            <button onClick={handleReviewMode} className="text-blue-500 hover:text-blue-600 flex items-center text-sm">
+              <RotateCcw className="h-4 w-4 mr-1" />
+              Practice Again
             </button>
-          </div>
+          )}
         </div>
 
         <div className="bg-[#e6f7f7] rounded-xl p-6 shadow-md mb-8">
@@ -345,7 +316,11 @@ const ExercisePage = () => {
           {mcqQuestions.map((question) => (
             <div key={question.id} className="mb-6 last:mb-0">
               <div className="flex items-start mb-2">
-                <p className="text-gray-800 font-medium">{question.question_text}</p>
+                {/* Preserve formatting for question text */}
+                <div
+                  className="text-gray-800 font-medium"
+                  dangerouslySetInnerHTML={{ __html: question.question_text }}
+                ></div>
                 {showResults && (
                   <div className="ml-2">
                     {results[question.id] ? (
@@ -389,7 +364,8 @@ const ExercisePage = () => {
                 <div
                   className={`mt-2 p-3 rounded-lg ${results[question.id] ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}
                 >
-                  <p className="text-sm">{explanations[question.id]}</p>
+                  {/* Preserve formatting for explanation */}
+                  <div className="text-sm" dangerouslySetInnerHTML={{ __html: explanations[question.id] }}></div>
                 </div>
               )}
             </div>
@@ -428,29 +404,6 @@ const ExercisePage = () => {
           )}
         </div>
       </div>
-
-      {/* Reset confirmation modal */}
-      {showResetConfirmation && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md">
-            <h3 className="text-xl font-bold text-red-600 mb-4">Reset This Milestone?</h3>
-            <p className="text-gray-700 mb-6">
-              This will reset your progress for this milestone only. You'll need to complete the exercise again.
-            </p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => setShowResetConfirmation(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button onClick={confirmReset} className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
-                Reset
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

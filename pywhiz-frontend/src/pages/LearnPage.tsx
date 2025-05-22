@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Play, Pause, Volume2, Maximize2, VolumeX, Award, RefreshCw } from "lucide-react"
+import { Play, Pause, Volume2, Maximize2, VolumeX, Award } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import confetti from "canvas-confetti"
 import { fetchLearnContent, fetchMilestones, type LearnContent, type Milestone } from "../services/learnApi"
@@ -22,7 +22,6 @@ const LearnPage = () => {
   const [milestone, setMilestone] = useState<Milestone | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [localVideoWatched, setLocalVideoWatched] = useState(false)
 
   // Fetch milestone and learn content
@@ -149,27 +148,6 @@ const LearnPage = () => {
     }
   }
 
-  const handleReset = () => {
-    setShowResetConfirmation(true)
-  }
-
-  const confirmReset = async () => {
-    if (milestoneId) {
-      await resetMilestoneProgress(milestoneId)
-      setVideoWatched(false)
-      setLocalVideoWatched(false)
-      localStorage.removeItem(`video_watched_${milestoneId}`)
-      setShowResetConfirmation(false)
-
-      // Reset video to beginning
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0
-        videoRef.current.pause()
-        setIsPlaying(false)
-      }
-    }
-  }
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -261,12 +239,8 @@ const LearnPage = () => {
           {/* Lesson Content */}
           <div className="flex flex-col">
             <div className="bg-white rounded-xl p-6 shadow-md mb-6 flex-grow">
-              <div className="flex justify-between items-start mb-4">
+              <div className="mb-4">
                 <h2 className="text-xl font-bold">{milestone.title}</h2>
-                <button onClick={handleReset} className="text-red-500 hover:text-red-600 flex items-center text-sm">
-                  <RefreshCw className="h-4 w-4 mr-1" />
-                  Reset Progress
-                </button>
               </div>
               <p className="text-gray-700">{milestone.description}</p>
 
@@ -294,7 +268,7 @@ const LearnPage = () => {
             <div className="bg-white rounded-xl p-6 shadow-md flex items-center">
               <div className="flex-shrink-0 mr-4">
                 <img
-                  src="/images/ai-assistant.png"
+                  src="/images/speaking.gif"
                   alt="AI Assistant"
                   className="w-16 h-16 rounded-full"
                   onError={(e) => {
@@ -358,29 +332,6 @@ const LearnPage = () => {
               <div>
                 <p className="font-bold text-[#003366]">Great job!</p>
                 <p className="text-sm text-gray-600">Keep going! You're doing amazing!</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Reset confirmation modal */}
-        {showResetConfirmation && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 max-w-md">
-              <h3 className="text-xl font-bold text-red-600 mb-4">Reset This Milestone?</h3>
-              <p className="text-gray-700 mb-6">
-                This will reset your progress for this milestone only. You'll need to watch the video again.
-              </p>
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={() => setShowResetConfirmation(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button onClick={confirmReset} className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
-                  Reset
-                </button>
               </div>
             </div>
           </div>

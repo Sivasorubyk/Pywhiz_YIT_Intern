@@ -3,15 +3,14 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
-import { Trophy, Star, Award, BookOpen, CheckCircle, ArrowRight, Medal, RefreshCw } from "lucide-react"
+import { Trophy, Star, Award, BookOpen, CheckCircle, ArrowRight, Medal } from "lucide-react"
 import confetti from "canvas-confetti"
 import { fetchMilestones, type Milestone } from "../services/learnApi"
 
 const DashboardPage = () => {
-  const { user, userProgress, isAuthenticated, resetProgress } = useAuth()
+  const { user, userProgress, isAuthenticated, resetMilestoneProgress } = useAuth()
   const navigate = useNavigate()
   const [showConfetti, setShowConfetti] = useState(false)
-  const [showResetConfirmation, setShowResetConfirmation] = useState(false)
   const [milestones, setMilestones] = useState<Milestone[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -60,19 +59,6 @@ const DashboardPage = () => {
     navigate(`/learn/${userProgress.current_milestone.id}`)
   }
 
-  const handleReset = () => {
-    setShowResetConfirmation(true)
-  }
-
-  const confirmReset = async () => {
-    await resetProgress()
-    setShowResetConfirmation(false)
-    // Navigate to the first milestone
-    if (milestones.length > 0) {
-      navigate(`/learn/${milestones[0].id}`)
-    }
-  }
-
   if (!user || !userProgress || isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -115,13 +101,6 @@ const DashboardPage = () => {
                   className="bg-[#10b3b3] hover:bg-[#0d9999] text-white px-6 py-3 rounded-full font-bold flex items-center transition-transform transform hover:scale-105 shadow-md"
                 >
                   Continue Learning <ArrowRight className="ml-2 h-5 w-5" />
-                </button>
-
-                <button
-                  onClick={handleReset}
-                  className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-full font-bold flex items-center transition-transform transform hover:scale-105 shadow-md"
-                >
-                  Reset Progress <RefreshCw className="ml-2 h-5 w-5" />
                 </button>
               </div>
             </div>
@@ -187,10 +166,10 @@ const DashboardPage = () => {
                         : "border-gray-200 bg-gray-50"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between">
+                    <div className="flex items-start md:items-center mb-3 md:mb-0">
                       <div
-                        className={`rounded-full p-2 mr-3 ${
+                        className={`rounded-full p-2 mr-3 flex-shrink-0 ${
                           isCompleted
                             ? "bg-green-500 text-white"
                             : isCurrent
@@ -208,25 +187,28 @@ const DashboardPage = () => {
                         <h3 className={`font-semibold ${isLocked ? "text-gray-500" : "text-[#003366]"}`}>
                           {milestone.title}
                         </h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 line-clamp-2 md:max-w-md">{milestone.description}</p>
+                        <p className="text-xs text-gray-500 mt-1">
                           {isCompleted ? "Completed" : isCurrent ? "In Progress" : "Locked"}
                         </p>
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => navigate(`/learn/${milestone.id}`)}
-                      disabled={isLocked}
-                      className={`px-4 py-2 rounded-lg ${
-                        isLocked
-                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                          : isCompleted
-                            ? "bg-green-500 text-white hover:bg-green-600"
-                            : "bg-[#10b3b3] text-white hover:bg-[#0d9999]"
-                      } transition-colors`}
-                    >
-                      {isCompleted ? "Review" : isCurrent ? "Continue" : "Start"}
-                    </button>
+                    <div className="flex items-center">
+                      <button
+                        onClick={() => navigate(`/learn/${milestone.id}`)}
+                        disabled={isLocked}
+                        className={`px-4 py-2 rounded-lg ${
+                          isLocked
+                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                            : isCompleted
+                              ? "bg-green-500 text-white hover:bg-green-600"
+                              : "bg-[#10b3b3] text-white hover:bg-[#0d9999]"
+                        } transition-colors`}
+                      >
+                        {isCompleted ? "Review" : isCurrent ? "Continue" : "Start"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )
@@ -265,28 +247,6 @@ const DashboardPage = () => {
             </p>
           </div>
         </div>
-        {showResetConfirmation && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 max-w-md">
-              <h3 className="text-xl font-bold text-red-600 mb-4">Reset Progress?</h3>
-              <p className="text-gray-700 mb-6">
-                This will reset all your progress, badges, and scores. You will start from Milestone 1 again. This
-                action cannot be undone.
-              </p>
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={() => setShowResetConfirmation(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button onClick={confirmReset} className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
-                  Reset
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

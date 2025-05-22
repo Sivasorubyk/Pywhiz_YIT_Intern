@@ -35,6 +35,8 @@ class CodeQuestion(models.Model):
     question = models.TextField()
     example_code = models.TextField(blank=True)
     hint = models.TextField(blank=True)
+    video_url = models.URLField(blank=True, null=True)  # New field
+    audio_url = models.URLField(blank=True, null=True)  # New field
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -66,6 +68,7 @@ class MCQQuestion(models.Model):
     options = models.JSONField()  # Format: {'A': 'Option 1', 'B': 'Option 2', ...}
     correct_answer = models.CharField(max_length=1)  # Stores the correct option key (e.g., 'A', 'B')
     explanation = models.TextField(blank=True)
+    audio_url = models.URLField(blank=True, null=True)  # New field
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -95,7 +98,6 @@ class UserProgress(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     current_milestone = models.ForeignKey(Milestone, on_delete=models.SET_NULL, null=True, related_name='current_users')
     completed_milestones = models.ManyToManyField(Milestone, related_name='completed_by', blank=True)
-    # New fields to track specific progress
     watched_videos = models.ManyToManyField(Milestone, related_name='videos_watched_by', blank=True)
     completed_code = models.ManyToManyField(Milestone, related_name='code_completed_by', blank=True)
     completed_exercises = models.ManyToManyField(Milestone, related_name='exercises_completed_by', blank=True)

@@ -114,9 +114,10 @@ const HomePage = () => {
           <div className="bg-white bg-opacity-90 p-8 rounded-xl shadow-md border-2 border-[#66cccc] transform transition-all duration-300 hover:scale-105">
             <h1 className="text-4xl font-bold mb-4 text-[#003366]">Welcome to PyWhiz!</h1>
             <p className="text-gray-700 mb-6 text-lg">
-              Hey there, future coder! 👋 If you're between 11-15 years old and want to learn Python in a fun and
-              interactive way, you're in the right place!
-            </p>
+              
+            வணக்கம், எதிர்கால Coders! 👋 நீங்கள் 11-16 வயதுக்குட்பட்டவராக இருந்து, Python ஐ இலகுவாக புரிந்து கொண்டு கற்றுக்கொள்ள விரும்பினால், நீங்கள் சரியான இடத்தில் இருக்கிறீர்கள்! </p>
+            <p><center>🔍 Learn, 💻 Code , 🧠 Exercise and 🛠️ Build</center></p>
+            
             <button
               onClick={handleStartClick}
               className="btn-primary inline-block text-lg px-8 py-3 rounded-full shadow-lg transform transition-transform duration-300 hover:scale-110 hover:-rotate-2"

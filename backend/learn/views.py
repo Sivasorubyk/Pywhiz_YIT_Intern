@@ -79,6 +79,7 @@ class SubmitCodeView(APIView):
                 "language": "python3",
                 "version": "3.10.0",
                 "files": [{"name": "main.py", "content": user_code}],
+                
             }
             
             # Add stdin if there are user inputs

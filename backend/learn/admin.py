@@ -16,21 +16,20 @@ class LearnContentAdmin(admin.ModelAdmin):
 
 @admin.register(CodeQuestion)
 class CodeQuestionAdmin(admin.ModelAdmin):
-    list_display = ("milestone", "question", "created_at")
+    list_display = ("milestone", "question", "video_url", "audio_url", "created_at")
     search_fields = ("question", "milestone__title")
     list_filter = ("milestone",)
 
-
 @admin.register(MCQQuestion)
 class MCQQuestionAdmin(admin.ModelAdmin):
-    list_display = ('milestone', 'order', 'question_text', 'correct_answer', 'created_at')
+    list_display = ('milestone', 'order', 'question_text', 'correct_answer', 'audio_url', 'created_at')
     list_filter = ('milestone',)
     search_fields = ('question_text',)
     ordering = ('milestone__order', 'order')
     readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
         (None, {
-            'fields': ('milestone', 'order', 'question_text', 'options', 'correct_answer', 'explanation')
+            'fields': ('milestone', 'order', 'question_text', 'options', 'correct_answer', 'explanation', 'audio_url')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
