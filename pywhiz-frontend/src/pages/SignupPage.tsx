@@ -1,36 +1,51 @@
-// src/pages/SignupPage.tsx
-import { useState, FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { User, Mail, Lock, AlertCircle } from 'lucide-react'
+"use client"
+
+import { useState, type FormEvent } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { useAuth } from "../contexts/AuthContext"
+import { User, Mail, Lock, AlertCircle } from "lucide-react"
 
 const SignupPage = () => {
-  const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { signup } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    setError('')
+    setError("")
     setIsSubmitting(true)
 
     try {
       await signup(username, email, password)
       // Redirect to OTP verification page with email
-      navigate('/verify-otp', { state: { email } })
+      navigate("/verify-otp", { state: { email } })
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create account. Please try again.')
+      console.error("Signup error:", err)
+      // Handle different error formats from the backend
+      if (err.response?.data?.error) {
+        setError(err.response.data.error)
+      } else if (err.response?.data?.username) {
+        setError(`Username: ${err.response.data.username[0]}`)
+      } else if (err.response?.data?.email) {
+        setError(`Email: ${err.response.data.email[0]}`)
+      } else if (err.response?.data?.password) {
+        setError(`Password: ${err.response.data.password[0]}`)
+      } else if (err.response?.data?.non_field_errors) {
+        setError(err.response.data.non_field_errors[0])
+      } else {
+        setError("Failed to create account. Please try again.")
+      }
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="overflow-hidden bg-gradient-to-b from-[#e6f7f7] to-white py-12">
+    <div className="min-h-screen bg-gradient-to-b from-[#e6f7f7] to-white flex items-center justify-center py-6">
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto bg-white rounded-2xl overflow-hidden shadow-lg">
           <div className="grid md:grid-cols-2">
@@ -47,7 +62,9 @@ const SignupPage = () => {
 
               <form onSubmit={handleSubmit}>
                 <div className="mb-6">
-                  <label htmlFor="username" className="sr-only">Username</label>
+                  <label htmlFor="username" className="sr-only">
+                    Username
+                  </label>
                   <div className="relative">
                     <input
                       id="username"
@@ -58,12 +75,14 @@ const SignupPage = () => {
                       className="input-field pl-10"
                       required
                     />
-                    <User className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   </div>
                 </div>
 
                 <div className="mb-6">
-                  <label htmlFor="email" className="sr-only">Email</label>
+                  <label htmlFor="email" className="sr-only">
+                    Email
+                  </label>
                   <div className="relative">
                     <input
                       id="email"
@@ -74,23 +93,25 @@ const SignupPage = () => {
                       className="input-field pl-10"
                       required
                     />
-                    <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   </div>
                 </div>
 
                 <div className="mb-6">
-                  <label htmlFor="password" className="sr-only">Password</label>
+                  <label htmlFor="password" className="sr-only">
+                    Password
+                  </label>
                   <div className="relative">
                     <input
                       id="password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Password"
+                      placeholder="Password (min 8 chars, include letter & number)"
                       className="input-field pl-10"
                       required
                     />
-                    <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   </div>
                 </div>
 
@@ -102,7 +123,7 @@ const SignupPage = () => {
                   {isSubmitting ? (
                     <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : (
-                    'Sign Up'
+                    "Sign Up"
                   )}
                 </button>
               </form>
@@ -119,11 +140,7 @@ const SignupPage = () => {
 
             {/* Right side - Image */}
             <div className="hidden md:block bg-[#e6f7f7] relative">
-              <img 
-                src="images/Signupin.jpeg"
-                alt="Python Learning" 
-                className="w-full h-full object-cover"
-              />
+              <img src="images/Signupin.jpeg" alt="Python Learning" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>

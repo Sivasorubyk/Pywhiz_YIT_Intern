@@ -1,53 +1,65 @@
-// src/pages/LoginPage.tsx
-import { useState, FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { Mail, Lock, AlertCircle } from 'lucide-react'
+"use client"
+
+import { useState, type FormEvent, useEffect } from "react"
+import { Link, useNavigate, useLocation } from "react-router-dom"
+import { useAuth } from "../contexts/AuthContext"
+import { Mail, Lock, AlertCircle, CheckCircle } from "lucide-react"
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [message, setMessage] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Check for success message from redirects
+  useEffect(() => {
+    if (location.state?.message) {
+      setMessage(location.state.message)
+      // Clear the message from location state
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    setError('')
+    setError("")
+    setMessage("")
     setIsSubmitting(true)
 
     try {
       await login(email, password)
       // Add a small delay before navigation to ensure state updates
       setTimeout(() => {
-        navigate('/')
+        navigate("/")
       }, 100)
     } catch (err: any) {
-      console.error('Login error:', err)
-      setError(
-        err.response?.data?.detail || 
-        err.response?.data?.error || 
-        err.message || 
-        'Failed to login. Please check your credentials.'
-      )
+      console.error("Login error:", err)
+      if (err.response?.data?.detail) {
+        setError(err.response.data.detail)
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error)
+      } else if (err.response?.data?.non_field_errors) {
+        setError(err.response.data.non_field_errors[0])
+      } else {
+        setError("Failed to login. Please check your credentials.")
+      }
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="overflow-hidden bg-gradient-to-b from-[#e6f7f7] to-white py-12">
+    <div className="min-h-screen bg-gradient-to-b from-[#e6f7f7] to-white flex items-center justify-center py-6">
       <div className="container mx-auto px-4">
         <div className="max-w-5xl mx-auto bg-white rounded-2xl overflow-hidden shadow-lg">
           <div className="grid md:grid-cols-2">
             {/* Left side - Image */}
             <div className="hidden md:block bg-[#003366] relative">
-              <img
-                src="images/Signupin.jpeg"
-                alt="Python Learning"
-                className="w-full h-full object-cover"
-              />
+              <img src="images/Signupin.jpeg" alt="Python Learning" className="w-full h-full object-cover" />
             </div>
 
             {/* Right side - Login Form */}
@@ -58,6 +70,13 @@ const LoginPage = () => {
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-start">
                   <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
                   <span>{error}</span>
+                </div>
+              )}
+
+              {message && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg flex items-start">
+                  <CheckCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>{message}</span>
                 </div>
               )}
 
@@ -76,7 +95,7 @@ const LoginPage = () => {
                       className="input-field pl-10"
                       required
                     />
-                    <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   </div>
                 </div>
 
@@ -94,7 +113,7 @@ const LoginPage = () => {
                       className="input-field pl-10"
                       required
                     />
-                    <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                   </div>
                 </div>
 

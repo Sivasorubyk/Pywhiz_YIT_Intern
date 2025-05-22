@@ -1,38 +1,62 @@
-// src/pages/VerifyOtpPage.tsx
-import { useState, FormEvent } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { Key, AlertCircle } from 'lucide-react'
+"use client"
+
+import { useState, type FormEvent, useEffect } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
+import { useAuth } from "../contexts/AuthContext"
+import { Key, AlertCircle } from "lucide-react"
 
 const VerifyOtpPage = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const { verifyOtp } = useAuth()
-  
+
   // Get email from location state or use empty string
-  const email = location.state?.email || ''
-  
-  const [otp, setOtp] = useState('')
-  const [error, setError] = useState('')
+  const email = location.state?.email || ""
+
+  const [otp, setOtp] = useState("")
+  const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+
+  // Redirect to login if no email is provided
+  useEffect(() => {
+    if (!email) {
+      navigate("/login")
+    }
+  }, [email, navigate])
+
+  // Auto-redirect to login after successful verification
+  useEffect(() => {
+    let redirectTimer: NodeJS.Timeout
+    if (success) {
+      redirectTimer = setTimeout(() => {
+        navigate("/login", { state: { message: "Email verified successfully. You can now login." } })
+      }, 2000)
+    }
+    return () => {
+      if (redirectTimer) clearTimeout(redirectTimer)
+    }
+  }, [success, navigate])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    setError('')
+    setError("")
     setIsSubmitting(true)
 
     try {
       await verifyOtp(email, otp)
-      navigate('/login', { state: { message: 'Email verified successfully. You can now login.' } })
+      setSuccess(true)
+      // Redirect will happen via useEffect
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid OTP. Please try again.')
+      console.error("OTP verification error:", err)
+      setError(err.response?.data?.error || "Invalid OTP. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#e6f7f7] to-white py-12">
+    <div className="min-h-screen bg-gradient-to-b from-[#e6f7f7] to-white flex items-center justify-center py-6">
       <div className="container mx-auto px-4">
         <div className="max-w-md mx-auto bg-white rounded-2xl overflow-hidden shadow-lg p-8">
           <h1 className="text-3xl font-bold mb-4 text-center">Verify OTP</h1>
@@ -47,9 +71,18 @@ const VerifyOtpPage = () => {
             </div>
           )}
 
+          {success && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg">
+              <p className="font-medium">Email verified successfully!</p>
+              <p className="text-sm">Redirecting to login page...</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             <div className="mb-6">
-              <label htmlFor="otp" className="sr-only">OTP</label>
+              <label htmlFor="otp" className="sr-only">
+                OTP
+              </label>
               <div className="relative">
                 <input
                   id="otp"
@@ -67,12 +100,12 @@ const VerifyOtpPage = () => {
             <button
               type="submit"
               className="w-full btn-primary py-3 flex justify-center items-center"
-              disabled={isSubmitting}
+              disabled={isSubmitting || success}
             >
               {isSubmitting ? (
                 <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
-                'Verify'
+                "Verify"
               )}
             </button>
           </form>

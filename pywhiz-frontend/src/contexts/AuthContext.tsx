@@ -124,7 +124,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (username: string, email: string, password: string) => {
     setIsLoading(true)
     try {
-      await api.post("/auth/register/", { username, email, password })
+      const response = await api.post("/auth/register/", { username, email, password })
+      return response.data
     } finally {
       setIsLoading(false)
     }
@@ -133,7 +134,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const verifyOtp = async (email: string, otp: string) => {
     setIsLoading(true)
     try {
-      await api.post("/auth/verify-email/", { email, otp })
+      const response = await api.post("/auth/verify-email/", { email, otp })
+      return response.data
     } finally {
       setIsLoading(false)
     }
@@ -153,7 +155,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const forgotPassword = async (email: string) => {
     setIsLoading(true)
     try {
-      await api.post("/auth/password-reset-request/", { email })
+      const response = await api.post("/auth/password-reset-request/", { email })
+      return response.data
     } finally {
       setIsLoading(false)
     }
@@ -162,11 +165,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const resetPassword = async (email: string, otp: string, newPassword: string) => {
     setIsLoading(true)
     try {
-      await api.post("/auth/password-reset/", {
+      const response = await api.post("/auth/password-reset/", {
         email,
         otp,
         new_password: newPassword,
       })
+      return response.data
     } finally {
       setIsLoading(false)
     }
