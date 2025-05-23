@@ -73,6 +73,13 @@ const ExercisePage = () => {
 
         if (questions && questions.length > 0) {
           setMcqQuestions(questions)
+
+          // Initialize answers with empty values to prevent undefined errors
+          const initialAnswers: Record<string, string> = {}
+          questions.forEach((q) => {
+            initialAnswers[q.id] = ""
+          })
+          setAnswers(initialAnswers)
         } else {
           console.error("No questions returned from API")
           setError("No questions available for this milestone")
@@ -274,7 +281,7 @@ const ExercisePage = () => {
 
         <div className="flex justify-between items-start mb-4 md:mb-6">
           <h1 className="text-xl md:text-2xl font-bold">{milestone.title} - Exercise</h1>
-          {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && (
+          {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && showResults && (
             <button onClick={handleReviewMode} className="text-blue-500 hover:text-blue-600 flex items-center text-sm">
               <RotateCcw className="h-4 w-4 mr-1" />
               Practice Again
@@ -313,7 +320,7 @@ const ExercisePage = () => {
           </div>
         </div>
 
-        {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && (
+        {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && showResults && (
           <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-6 md:mb-8 flex items-center">
             <CheckCircle className="h-5 w-5 md:h-6 md:w-6 mr-3 text-green-500" />
             <div>

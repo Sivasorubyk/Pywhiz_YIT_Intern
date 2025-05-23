@@ -91,6 +91,14 @@ const LearnPage = () => {
     }
   }, [milestoneId])
 
+  // Add this useEffect to check if the video was previously watched
+  useEffect(() => {
+    // Check if video was previously watched from backend or localStorage
+    if ((milestoneId && isVideoWatched(milestoneId)) || localVideoWatched) {
+      setVideoWatched(true)
+    }
+  }, [milestoneId, isVideoWatched, localVideoWatched])
+
   // Reset video player when changing content
   useEffect(() => {
     if (videoRef.current) {
@@ -102,13 +110,13 @@ const LearnPage = () => {
     }
   }, [currentContentIndex])
 
-  // Handle video events
+  // Update the handleTimeUpdate function to mark video as watched at 100% instead of 90%
   const handleTimeUpdate = () => {
     if (videoRef.current) {
       setCurrentTime(videoRef.current.currentTime)
 
-      // Mark as watched when 90% complete
-      if (!videoWatched && videoRef.current.currentTime > videoRef.current.duration * 0.9) {
+      // Mark as watched when 100% complete
+      if (!videoWatched && videoRef.current.currentTime >= videoRef.current.duration) {
         setVideoWatched(true)
         setLocalVideoWatched(true)
 
