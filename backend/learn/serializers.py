@@ -19,7 +19,7 @@ class LearnContentSerializer(serializers.ModelSerializer):
 class CodeQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = CodeQuestion
-        fields = '__all__'
+        fields = '__all__'  # This will automatically include video_url_2
 
 class UserCodeAnswerSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -33,7 +33,7 @@ class UserCodeAnswerSerializer(serializers.ModelSerializer):
 class MCQQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = MCQQuestion
-        fields = '__all__'
+        fields = '__all__'  # This will automatically include audio_url_2
 
 class UserMCQAnswerSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

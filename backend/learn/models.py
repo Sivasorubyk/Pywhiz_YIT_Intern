@@ -19,15 +19,22 @@ class Milestone(models.Model):
 
 class LearnContent(models.Model):
     milestone = models.ForeignKey(Milestone, on_delete=models.CASCADE, related_name='learn_contents')
-    video_url = models.URLField()
+    video_url = models.URLField()  # Main video URL (can keep this for backward compatibility)
     audio_url = models.URLField(blank=True, null=True)
     transcript = models.TextField()
     additional_resources = models.JSONField(default=dict, blank=True)
+    order = models.PositiveIntegerField(default=0)  # New field for ordering
+    is_additional = models.BooleanField(default=False)  # Marks if this is an extra video
+    title = models.CharField(max_length=200, blank=True)  # New field for video title
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ['order']
+        unique_together = ('milestone', 'order')  # Ensure order is unique per milestone
+
     def __str__(self):
-        return f"Learn Content for {self.milestone.title}"
+        return f"Learn Content {self.order} for {self.milestone.title}"
 
 class CodeQuestion(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -36,6 +43,7 @@ class CodeQuestion(models.Model):
     example_code = models.TextField(blank=True)
     hint = models.TextField(blank=True)
     video_url = models.URLField(blank=True, null=True)  # New field
+    video_url_2 = models.URLField(blank=True, null=True)  # New additional video URL
     audio_url = models.URLField(blank=True, null=True)  # New field
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -69,6 +77,7 @@ class MCQQuestion(models.Model):
     correct_answer = models.CharField(max_length=1)  # Stores the correct option key (e.g., 'A', 'B')
     explanation = models.TextField(blank=True)
     audio_url = models.URLField(blank=True, null=True)  # New field
+    audio_url_2 = models.URLField(blank=True, null=True)  # New additional audio URL
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

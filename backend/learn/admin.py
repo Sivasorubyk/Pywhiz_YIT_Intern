@@ -10,13 +10,15 @@ class MilestoneAdmin(admin.ModelAdmin):
 
 @admin.register(LearnContent)
 class LearnContentAdmin(admin.ModelAdmin):
-    list_display = ('milestone', 'video_url', 'audio_url', 'created_at')
-    search_fields = ('milestone__title', 'transcript')
-    list_filter = ('created_at', 'milestone')
+    list_display = ('milestone', 'order', 'title', 'video_url', 'is_additional', 'created_at')
+    list_editable = ('order', 'is_additional')  # Allow quick editing of order
+    search_fields = ('title', 'transcript', 'milestone__title')
+    list_filter = ('milestone', 'is_additional', 'created_at')
+    ordering = ('milestone__order', 'order')
 
 @admin.register(CodeQuestion)
 class CodeQuestionAdmin(admin.ModelAdmin):
-    list_display = ("milestone", "question", "video_url", "audio_url", "created_at")
+    list_display = ("milestone", "question", "video_url", "video_url_2", "audio_url", "created_at")
     search_fields = ("question", "milestone__title")
     list_filter = ("milestone",)
 

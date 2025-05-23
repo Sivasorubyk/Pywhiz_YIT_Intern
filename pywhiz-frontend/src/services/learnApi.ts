@@ -18,6 +18,9 @@ export interface LearnContent {
   audio_url: string | null
   transcript: string
   additional_resources: Record<string, any>
+  order: number
+  is_additional: boolean
+  title: string
   created_at: string
   updated_at: string
 }
@@ -28,6 +31,9 @@ export interface CodeQuestion {
   question: string // This may contain HTML formatting
   example_code: string
   hint: string // This may contain HTML formatting
+  video_url: string | null
+  video_url_2: string | null // New field for explanation video
+  audio_url: string | null
   created_at: string
   updated_at: string
 }
@@ -39,6 +45,8 @@ export interface MCQQuestion {
   options: Record<string, string>
   correct_answer: string
   explanation: string // This may contain HTML formatting
+  audio_url: string | null
+  audio_url_2: string | null // New field for explanation audio
   order: number
   created_at: string
   updated_at: string
@@ -111,8 +119,8 @@ export const fetchMilestones = async (): Promise<Milestone[]> => {
   return response.data
 }
 
-export const fetchLearnContent = async (milestoneId: string): Promise<LearnContent> => {
-  const response = await api.get(`/learn/milestones/${milestoneId}/learn/`)
+export const fetchLearnContent = async (milestoneId: string): Promise<LearnContent[]> => {
+  const response = await api.get(`/learn/milestones/${milestoneId}/learn-contents/`)
   return response.data
 }
 

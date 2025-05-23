@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Volume2, VolumeX, CheckCircle, AlertCircle, RotateCcw } from "lucide-react"
+import { Volume2, VolumeX, CheckCircle, AlertCircle, RotateCcw, Play, Pause } from "lucide-react"
 import confetti from "canvas-confetti"
 import { useAuth } from "../contexts/AuthContext"
 import {
@@ -17,6 +17,7 @@ const ExercisePage = () => {
   const navigate = useNavigate()
   const { milestoneId } = useParams<{ milestoneId: string }>()
   const { userProgress, updateUserProgress, markExerciseCompleted, isExerciseCompleted } = useAuth()
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   const [milestone, setMilestone] = useState<Milestone | null>(null)
   const [mcqQuestions, setMcqQuestions] = useState<MCQQuestion[]>([])
@@ -31,6 +32,23 @@ const ExercisePage = () => {
   const [allQuestionsAnswered, setAllQuestionsAnswered] = useState(false)
   const [localMilestoneAchieved, setLocalMilestoneAchieved] = useState(false)
   const [isReviewMode, setIsReviewMode] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+
+    return () => {
+      window.removeEventListener("resize", checkMobile)
+    }
+  }, [])
 
   // Fetch milestone and MCQ questions
   useEffect(() => {
@@ -97,6 +115,23 @@ const ExercisePage = () => {
     }
   }, [answers, mcqQuestions])
 
+  // Handle audio playback
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.play().catch((error) => {
+          console.error("Error playing audio:", error)
+        })
+      } else {
+        audioRef.current.pause()
+      }
+    }
+  }, [isPlaying])
+
+  const toggleAudio = () => {
+    setIsPlaying(!isPlaying)
+  }
+
   const handleAnswerChange = (questionId: string, value: string) => {
     setAnswers((prev) => ({
       ...prev,
@@ -131,6 +166,11 @@ const ExercisePage = () => {
     setResults(newResults)
     setExplanations(newExplanations)
     setShowResults(true)
+
+    // Set the current question ID for audio playback
+    if (mcqQuestions.length > 0) {
+      setCurrentQuestionId(mcqQuestions[0].id)
+    }
 
     if (allCorrect && !isReviewMode) {
       setMilestoneAchieved(true)
@@ -193,6 +233,13 @@ const ExercisePage = () => {
     setExplanations({})
   }
 
+  const toggleMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isMuted
+      setIsMuted(!isMuted)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -214,7 +261,7 @@ const ExercisePage = () => {
 
   return (
     <div className="bg-gradient-to-b from-[#e6f7f7] to-white min-h-[calc(100vh-64px)]">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 md:py-8">
         <div className="mb-4 flex items-center justify-between">
           <span className="inline-block bg-[#10b3b3] text-white px-4 py-1 rounded-full text-sm font-medium">
             {milestone.title}
@@ -225,8 +272,8 @@ const ExercisePage = () => {
           </button>
         </div>
 
-        <div className="flex justify-between items-start mb-6">
-          <h1 className="text-2xl font-bold">{milestone.title} - Exercise</h1>
+        <div className="flex justify-between items-start mb-4 md:mb-6">
+          <h1 className="text-xl md:text-2xl font-bold">{milestone.title} - Exercise</h1>
           {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && (
             <button onClick={handleReviewMode} className="text-blue-500 hover:text-blue-600 flex items-center text-sm">
               <RotateCcw className="h-4 w-4 mr-1" />
@@ -235,28 +282,28 @@ const ExercisePage = () => {
           )}
         </div>
 
-        <div className="bg-[#e6f7f7] rounded-xl p-6 shadow-md mb-8">
+        <div className="bg-[#e6f7f7] rounded-xl p-4 md:p-6 shadow-md mb-6 md:mb-8">
           <div className="flex items-center">
             <div className="flex-grow">
-              <p className="text-gray-700">
+              <p className="text-gray-700 text-sm md:text-base">
                 Test your knowledge of {milestone.title} with these multiple-choice questions.
               </p>
             </div>
             <div className="flex items-center ml-4">
               <button
-                onClick={() => setIsMuted(!isMuted)}
+                onClick={toggleMute}
                 className="p-2 rounded-full bg-white hover:bg-gray-100 transition-colors duration-200 mr-4"
               >
                 {isMuted ? (
-                  <VolumeX className="h-5 w-5 text-gray-600" />
+                  <VolumeX className="h-4 w-4 md:h-5 md:w-5 text-gray-600" />
                 ) : (
-                  <Volume2 className="h-5 w-5 text-gray-600" />
+                  <Volume2 className="h-4 w-4 md:h-5 md:w-5 text-gray-600" />
                 )}
               </button>
               <img
                 src="/images/ai-assistant.png"
                 alt="AI Assistant"
-                className="w-16 h-16 rounded-full"
+                className="w-12 h-12 md:w-16 md:h-16 rounded-full"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.src = "/placeholder.svg?height=80&width=80"
@@ -267,14 +314,14 @@ const ExercisePage = () => {
         </div>
 
         {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && (
-          <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-8 flex items-center">
-            <CheckCircle className="h-6 w-6 mr-3 text-green-500" />
+          <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-6 md:mb-8 flex items-center">
+            <CheckCircle className="h-5 w-5 md:h-6 md:w-6 mr-3 text-green-500" />
             <div>
-              <h3 className="font-bold">Congratulations!</h3>
-              <p>You've completed {milestone.title}! Keep up the great work.</p>
+              <h3 className="font-bold text-sm md:text-base">Congratulations!</h3>
+              <p className="text-sm">You've completed {milestone.title}! Keep up the great work.</p>
               <button
                 onClick={handleReviewMode}
-                className="mt-2 text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                className="mt-2 text-xs md:text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
               >
                 Practice Again
               </button>
@@ -283,11 +330,11 @@ const ExercisePage = () => {
         )}
 
         {isReviewMode && (
-          <div className="bg-blue-50 border border-blue-200 text-blue-700 rounded-xl p-4 mb-8 flex items-center">
-            <RotateCcw className="h-6 w-6 mr-3 text-blue-500" />
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 rounded-xl p-4 mb-6 md:mb-8 flex items-center">
+            <RotateCcw className="h-5 w-5 md:h-6 md:w-6 mr-3 text-blue-500" />
             <div>
-              <h3 className="font-bold">Review Mode</h3>
-              <p>You're reviewing this exercise. Your answers won't affect your progress.</p>
+              <h3 className="font-bold text-sm md:text-base">Review Mode</h3>
+              <p className="text-sm">You're reviewing this exercise. Your answers won't affect your progress.</p>
             </div>
           </div>
         )}
@@ -298,35 +345,35 @@ const ExercisePage = () => {
               <img
                 src="/images/milestone-complete.gif"
                 alt="Milestone complete!"
-                className="w-16 h-16 rounded-md mr-2"
+                className="w-12 h-12 md:w-16 md:h-16 rounded-md mr-2"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.src = "/placeholder.svg?height=80&width=80"
                 }}
               />
               <div>
-                <p className="font-bold text-[#003366]">Milestone complete!</p>
-                <p className="text-sm text-gray-600">You're making amazing progress!</p>
+                <p className="font-bold text-[#003366] text-sm md:text-base">Milestone complete!</p>
+                <p className="text-xs md:text-sm text-gray-600">You're making amazing progress!</p>
               </div>
             </div>
           </div>
         )}
 
-        <div className="bg-white rounded-xl p-6 shadow-md mb-8">
+        <div className="bg-white rounded-xl p-4 md:p-6 shadow-md mb-6 md:mb-8">
           {mcqQuestions.map((question) => (
             <div key={question.id} className="mb-6 last:mb-0">
               <div className="flex items-start mb-2">
                 {/* Preserve formatting for question text */}
                 <div
-                  className="text-gray-800 font-medium"
+                  className="text-gray-800 font-medium text-sm md:text-base"
                   dangerouslySetInnerHTML={{ __html: question.question_text }}
                 ></div>
                 {showResults && (
                   <div className="ml-2">
                     {results[question.id] ? (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-green-500" />
                     ) : (
-                      <AlertCircle className="h-5 w-5 text-red-500" />
+                      <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-red-500" />
                     )}
                   </div>
                 )}
@@ -336,7 +383,7 @@ const ExercisePage = () => {
                 <select
                   value={answers[question.id] || ""}
                   onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                  className="w-full p-3 pr-10 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-[#10b3b3]"
+                  className="w-full p-2 md:p-3 pr-10 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-[#10b3b3] text-sm md:text-base"
                   disabled={showResults && !isReviewMode}
                 >
                   <option value="" disabled>
@@ -349,7 +396,7 @@ const ExercisePage = () => {
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                   <svg
-                    className="w-5 h-5 text-gray-400"
+                    className="w-4 h-4 md:w-5 md:h-5 text-gray-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -365,7 +412,33 @@ const ExercisePage = () => {
                   className={`mt-2 p-3 rounded-lg ${results[question.id] ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}
                 >
                   {/* Preserve formatting for explanation */}
-                  <div className="text-sm" dangerouslySetInnerHTML={{ __html: explanations[question.id] }}></div>
+                  <div
+                    className="text-xs md:text-sm"
+                    dangerouslySetInnerHTML={{ __html: explanations[question.id] }}
+                  ></div>
+
+                  {/* Audio player for explanation */}
+                  {showResults && question.audio_url_2 && question.id === currentQuestionId && (
+                    <div className="mt-3 p-2 bg-white rounded-lg border border-gray-200">
+                      <div className="flex items-center">
+                        <button
+                          onClick={toggleAudio}
+                          className="p-2 rounded-full bg-[#10b3b3] text-white hover:bg-[#0d9999] mr-2"
+                        >
+                          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                        </button>
+                        <span className="text-xs md:text-sm text-gray-700">
+                          {isPlaying ? "Pause Audio Explanation" : "Play Audio Explanation"}
+                        </span>
+                      </div>
+                      <audio
+                        ref={audioRef}
+                        src={question.audio_url_2}
+                        className="hidden"
+                        onEnded={() => setIsPlaying(false)}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -375,7 +448,7 @@ const ExercisePage = () => {
         <div className="flex justify-between">
           <button
             onClick={handlePreviousClick}
-            className="px-6 py-2 bg-[#66cccc] hover:bg-[#55bbbb] text-white rounded-md transition-all duration-300"
+            className="px-4 md:px-6 py-2 bg-[#66cccc] hover:bg-[#55bbbb] text-white rounded-md transition-all duration-300 text-xs md:text-sm"
           >
             Previous
           </button>
@@ -384,7 +457,7 @@ const ExercisePage = () => {
             <button
               onClick={handleCheck}
               disabled={!allQuestionsAnswered}
-              className={`px-6 py-2 rounded-md transition-all duration-300 ${
+              className={`px-4 md:px-6 py-2 rounded-md transition-all duration-300 text-xs md:text-sm ${
                 allQuestionsAnswered
                   ? "bg-[#10b3b3] hover:bg-[#0d9999] text-white"
                   : "bg-gray-200 text-gray-500 cursor-not-allowed"
@@ -395,7 +468,7 @@ const ExercisePage = () => {
           ) : (
             <button
               onClick={handleNextClick}
-              className="px-6 py-2 bg-[#10b3b3] hover:bg-[#0d9999] text-white rounded-md transition-all duration-300"
+              className="px-4 md:px-6 py-2 bg-[#10b3b3] hover:bg-[#0d9999] text-white rounded-md transition-all duration-300 text-xs md:text-sm"
             >
               {milestone.order < (userProgress?.completed_milestones.length || 0)
                 ? "Next Milestone"

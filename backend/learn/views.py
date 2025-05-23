@@ -45,13 +45,13 @@ class MilestoneListView(generics.ListAPIView):
     serializer_class = MilestoneSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-class LearnContentView(generics.RetrieveAPIView):
+class LearnContentView(generics.ListAPIView):
     serializer_class = LearnContentSerializer
     permission_classes = [permissions.IsAuthenticated]
     
-    def get_object(self):
+    def get_queryset(self):
         milestone_id = self.kwargs.get('milestone_id')
-        return LearnContent.objects.get(milestone_id=milestone_id)
+        return LearnContent.objects.filter(milestone_id=milestone_id).order_by('order')
 
 class CodeQuestionView(generics.ListAPIView):
     serializer_class = CodeQuestionSerializer

@@ -10,7 +10,7 @@ from .views import (
 urlpatterns = [
     # Existing paths
     path('milestones/', MilestoneListView.as_view(), name='milestone-list'),
-    path('milestones/<uuid:milestone_id>/learn/', LearnContentView.as_view(), name='learn-content'),
+    path('milestones/<uuid:milestone_id>/learn-contents/', LearnContentView.as_view(), name='learn-contents'),
     path('milestones/<uuid:milestone_id>/questions/', CodeQuestionView.as_view(), name='code-questions'),
     path('questions/<uuid:question_id>/submit/', SubmitCodeView.as_view(), name='submit-code'),
     path('milestones/<uuid:milestone_id>/mcq-questions/', MCQQuestionView.as_view(), name='mcq-questions'),

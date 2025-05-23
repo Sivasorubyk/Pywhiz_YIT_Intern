@@ -19,6 +19,7 @@ const CodePage = () => {
   const { userProgress, isCodeCompleted, markCodeCompleted } = useAuth()
   const { milestoneId } = useParams()
   const videoRef = useRef<HTMLVideoElement>(null)
+  const explanationVideoRef = useRef<HTMLVideoElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
 
   const [milestone, setMilestone] = useState<Milestone | null>(null)
@@ -39,11 +40,16 @@ const CodePage = () => {
   const [inputValue, setInputValue] = useState("")
   const [showInputHelp, setShowInputHelp] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isExplanationPlaying, setIsExplanationPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
+  const [explanationCurrentTime, setExplanationCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [explanationDuration, setExplanationDuration] = useState(0)
   const [showVideo, setShowVideo] = useState(false)
+  const [showExplanationVideo, setShowExplanationVideo] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [questionOutputs, setQuestionOutputs] = useState<Record<string, string>>({})
+  const [pointsAwarded, setPointsAwarded] = useState<Record<string, boolean>>({})
 
   // Check if device is mobile
   useEffect(() => {
@@ -84,20 +90,28 @@ const CodePage = () => {
 
           // Check which questions are completed
           const completed: Record<string, boolean> = {}
+          const awarded: Record<string, boolean> = {}
           for (const question of questions) {
             // Check if this specific question is completed
             // We'll use localStorage for this
             const isCompleted = localStorage.getItem(`code_success_${question.id}`) === "true"
             completed[question.id] = isCompleted
+
+            // Check if points were already awarded
+            const isAwarded = localStorage.getItem(`points_awarded_${question.id}`) === "true"
+            awarded[question.id] = isAwarded
           }
           setCompletedQuestions(completed)
+          setPointsAwarded(awarded)
         } else {
           setError("No code questions available for this milestone")
         }
 
         // Fetch learn content for this milestone to get the video
         const content = await fetchLearnContent(milestoneId!)
-        setLearnContent(content)
+        if (Array.isArray(content) && content.length > 0) {
+          setLearnContent(content[0])
+        }
 
         // Check if code was previously completed successfully using the backend
         if (milestoneId && isCodeCompleted(milestoneId)) {
@@ -132,9 +146,21 @@ const CodePage = () => {
     }
   }
 
+  const handleExplanationTimeUpdate = () => {
+    if (explanationVideoRef.current) {
+      setExplanationCurrentTime(explanationVideoRef.current.currentTime)
+    }
+  }
+
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       setDuration(videoRef.current.duration)
+    }
+  }
+
+  const handleExplanationLoadedMetadata = () => {
+    if (explanationVideoRef.current) {
+      setExplanationDuration(explanationVideoRef.current.duration)
     }
   }
 
@@ -149,10 +175,24 @@ const CodePage = () => {
     }
   }
 
+  const toggleExplanationPlay = () => {
+    if (explanationVideoRef.current) {
+      if (isExplanationPlaying) {
+        explanationVideoRef.current.pause()
+      } else {
+        explanationVideoRef.current.play()
+      }
+      setIsExplanationPlaying(!isExplanationPlaying)
+    }
+  }
+
   const toggleMute = () => {
     if (videoRef.current) {
       videoRef.current.muted = !isMuted
       setIsMuted(!isMuted)
+    }
+    if (explanationVideoRef.current) {
+      explanationVideoRef.current.muted = !isMuted
     }
   }
 
@@ -160,6 +200,14 @@ const CodePage = () => {
     if (videoRef.current) {
       if (videoRef.current.requestFullscreen) {
         videoRef.current.requestFullscreen()
+      }
+    }
+  }
+
+  const handleExplanationFullscreen = () => {
+    if (explanationVideoRef.current) {
+      if (explanationVideoRef.current.requestFullscreen) {
+        explanationVideoRef.current.requestFullscreen()
       }
     }
   }
@@ -212,6 +260,16 @@ const CodePage = () => {
           ...prev,
           [currentQuestion.id]: true,
         }))
+
+        // Check if points were already awarded for this question
+        if (!pointsAwarded[currentQuestion.id]) {
+          // Mark points as awarded to prevent duplicate points
+          localStorage.setItem(`points_awarded_${currentQuestion.id}`, "true")
+          setPointsAwarded((prev) => ({
+            ...prev,
+            [currentQuestion.id]: true,
+          }))
+        }
 
         // Check if all questions are now completed
         const updatedCompleted = {
@@ -276,6 +334,7 @@ const CodePage = () => {
       setError("")
       setIsSuccess(completedQuestions[currentQuestion.id] || false)
       setInputValue("")
+      setShowExplanationVideo(false)
     }
   }, [currentQuestion, completedQuestions])
 
@@ -409,7 +468,7 @@ const CodePage = () => {
               <div className="flex items-center">
                 <div className="flex-shrink-0 mr-4">
                   <img
-                    src="/images/speaking.gif"
+                    src="/images/ai-assistant.png"
                     alt="AI Assistant"
                     className="w-12 h-12 md:w-16 md:h-16 rounded-full"
                     onError={(e) => {
@@ -588,6 +647,84 @@ John
                 placeholder="Write your Python code here..."
               />
             </div>
+
+            {/* Explanation Video */}
+            {currentQuestion?.video_url_2 && (
+              <div className="bg-white rounded-xl p-4 shadow-md">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-base md:text-lg font-semibold">Explanation Video</h3>
+                  <button
+                    onClick={() => setShowExplanationVideo(!showExplanationVideo)}
+                    className="flex items-center text-xs md:text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    {showExplanationVideo ? "Hide Video" : "Show Video"}
+                  </button>
+                </div>
+
+                {showExplanationVideo && (
+                  <div className="bg-[#003366] rounded-xl overflow-hidden shadow-lg mt-2">
+                    <div className="relative aspect-w-16 aspect-h-9 bg-black">
+                      <video
+                        ref={explanationVideoRef}
+                        className="w-full h-full object-cover"
+                        poster="/images/video-thumbnail.jpg"
+                        onTimeUpdate={handleExplanationTimeUpdate}
+                        onLoadedMetadata={handleExplanationLoadedMetadata}
+                        onError={() => console.error("Explanation video failed to load")}
+                      >
+                        <source src={currentQuestion.video_url_2} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+
+                      {!isExplanationPlaying && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <button
+                            onClick={toggleExplanationPlay}
+                            className="bg-white bg-opacity-80 rounded-full p-2 md:p-4 shadow-lg hover:bg-opacity-100 transition-all duration-300"
+                          >
+                            <Play className="h-6 w-6 md:h-8 md:w-8 text-[#003366]" />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Progress bar */}
+                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800">
+                        <div
+                          className="h-full bg-[#10b3b3]"
+                          style={{ width: `${(explanationCurrentTime / (explanationDuration || 1)) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="bg-[#003366] text-white p-2 md:p-3 flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <button onClick={toggleExplanationPlay}>
+                          {isExplanationPlaying ? (
+                            <Pause className="h-4 w-4 md:h-5 md:w-5" />
+                          ) : (
+                            <Play className="h-4 w-4 md:h-5 md:w-5" />
+                          )}
+                        </button>
+                        <span className="text-xs md:text-sm">
+                          {formatTime(explanationCurrentTime)} / {formatTime(explanationDuration || 0)}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2 md:space-x-3">
+                        <button onClick={toggleMute}>
+                          {isMuted ? (
+                            <VolumeX className="h-4 w-4 md:h-5 md:w-5" />
+                          ) : (
+                            <Volume2 className="h-4 w-4 md:h-5 md:w-5" />
+                          )}
+                        </button>
+                        <button onClick={handleExplanationFullscreen}>
+                          <Maximize2 className="h-4 w-4 md:h-5 md:w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-between">
               <button

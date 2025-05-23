@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Play, Pause, Volume2, Maximize2, VolumeX, Award } from "lucide-react"
+import { Play, Pause, Volume2, Maximize2, VolumeX, Award, ChevronLeft, ChevronRight } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import confetti from "canvas-confetti"
 import { fetchLearnContent, fetchMilestones, type LearnContent, type Milestone } from "../services/learnApi"
@@ -18,11 +18,27 @@ const LearnPage = () => {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [showBadgeAnimation, setShowBadgeAnimation] = useState(false)
-  const [learnContent, setLearnContent] = useState<LearnContent | null>(null)
+  const [learnContents, setLearnContents] = useState<LearnContent[]>([])
+  const [currentContentIndex, setCurrentContentIndex] = useState(0)
   const [milestone, setMilestone] = useState<Milestone | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [localVideoWatched, setLocalVideoWatched] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+
+    return () => {
+      window.removeEventListener("resize", checkMobile)
+    }
+  }, [])
 
   // Fetch milestone and learn content
   useEffect(() => {
@@ -42,8 +58,12 @@ const LearnPage = () => {
         setMilestone(currentMilestone)
 
         // Fetch learn content for this milestone
-        const content = await fetchLearnContent(milestoneId!)
-        setLearnContent(content)
+        const contents = await fetchLearnContent(milestoneId!)
+        if (Array.isArray(contents) && contents.length > 0) {
+          setLearnContents(contents)
+        } else {
+          setError("No learning content available")
+        }
 
         // Check if video was previously watched using the backend data
         if (milestoneId && isVideoWatched(milestoneId)) {
@@ -70,6 +90,17 @@ const LearnPage = () => {
       }
     }
   }, [milestoneId])
+
+  // Reset video player when changing content
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.pause()
+      videoRef.current.currentTime = 0
+      setIsPlaying(false)
+      setCurrentTime(0)
+      setDuration(0)
+    }
+  }, [currentContentIndex])
 
   // Handle video events
   const handleTimeUpdate = () => {
@@ -143,10 +174,28 @@ const LearnPage = () => {
   }
 
   const handleNextClick = () => {
-    if (milestone) {
-      navigate(`/code/${milestoneId}`)
+    if (currentContentIndex < learnContents.length - 1) {
+      // Go to next video in the sequence
+      setCurrentContentIndex(currentContentIndex + 1)
+    } else {
+      // All videos watched, go to code page
+      if (milestone) {
+        navigate(`/code/${milestoneId}`)
+      }
     }
   }
+
+  const handlePreviousClick = () => {
+    if (currentContentIndex > 0) {
+      // Go to previous video in the sequence
+      setCurrentContentIndex(currentContentIndex - 1)
+    } else {
+      // First video, go back to dashboard
+      navigate("/dashboard")
+    }
+  }
+
+  const currentContent = learnContents[currentContentIndex]
 
   if (isLoading) {
     return (
@@ -156,7 +205,7 @@ const LearnPage = () => {
     )
   }
 
-  if (error || !learnContent || !milestone) {
+  if (error || !milestone || !currentContent) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <div className="text-red-500 text-xl mb-4">{error || "Content not available"}</div>
@@ -169,7 +218,7 @@ const LearnPage = () => {
 
   return (
     <div className="bg-gradient-to-b from-[#e6f7f7] to-white min-h-[calc(100vh-64px)]">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 md:py-8">
         <div className="mb-4 flex items-center justify-between">
           <span className="inline-block bg-[#10b3b3] text-white px-4 py-1 rounded-full text-sm font-medium">
             {milestone.title}
@@ -180,20 +229,20 @@ const LearnPage = () => {
           </button>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-4 md:gap-6">
           {/* Video Player */}
           <div className="bg-[#003366] rounded-xl overflow-hidden shadow-lg">
             <div className="relative aspect-w-16 aspect-h-9 bg-black">
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
-                poster="/images/intro.jpeg"
+                poster="/images/video-thumbnail.jpg"
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
                 onEnded={() => setVideoWatched(true)}
                 onError={() => console.error("Video failed to load")}
               >
-                <source src={learnContent.video_url} type="video/mp4" />
+                <source src={currentContent.video_url} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
 
@@ -201,9 +250,9 @@ const LearnPage = () => {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <button
                     onClick={togglePlay}
-                    className="bg-white bg-opacity-80 rounded-full p-4 shadow-lg hover:bg-opacity-100 transition-all duration-300"
+                    className="bg-white bg-opacity-80 rounded-full p-2 md:p-4 shadow-lg hover:bg-opacity-100 transition-all duration-300"
                   >
-                    <Play className="h-8 w-8 text-[#003366]" />
+                    <Play className="h-6 w-6 md:h-8 md:w-8 text-[#003366]" />
                   </button>
                 </div>
               )}
@@ -216,21 +265,25 @@ const LearnPage = () => {
                 ></div>
               </div>
             </div>
-            <div className="bg-[#003366] text-white p-3 flex items-center justify-between">
+            <div className="bg-[#003366] text-white p-2 md:p-3 flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <button onClick={togglePlay}>
-                  {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                  {isPlaying ? <Pause className="h-4 w-4 md:h-5 md:w-5" /> : <Play className="h-4 w-4 md:h-5 md:w-5" />}
                 </button>
-                <span className="text-sm">
+                <span className="text-xs md:text-sm">
                   {formatTime(currentTime)} / {formatTime(duration || 0)}
                 </span>
               </div>
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 md:space-x-3">
                 <button onClick={toggleMute}>
-                  {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                  {isMuted ? (
+                    <VolumeX className="h-4 w-4 md:h-5 md:w-5" />
+                  ) : (
+                    <Volume2 className="h-4 w-4 md:h-5 md:w-5" />
+                  )}
                 </button>
                 <button onClick={handleFullscreen}>
-                  <Maximize2 className="h-5 w-5" />
+                  <Maximize2 className="h-4 w-4 md:h-5 md:w-5" />
                 </button>
               </div>
             </div>
@@ -238,25 +291,33 @@ const LearnPage = () => {
 
           {/* Lesson Content */}
           <div className="flex flex-col">
-            <div className="bg-white rounded-xl p-6 shadow-md mb-6 flex-grow">
+            <div className="bg-white rounded-xl p-4 md:p-6 shadow-md mb-4 md:mb-6 flex-grow">
               <div className="mb-4">
-                <h2 className="text-xl font-bold">{milestone.title}</h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg md:text-xl font-bold">{milestone.title}</h2>
+                  {learnContents.length > 1 && (
+                    <div className="text-sm text-gray-600">
+                      Video {currentContentIndex + 1} of {learnContents.length}
+                    </div>
+                  )}
+                </div>
+                {currentContent.title && <p className="text-[#10b3b3] font-medium">{currentContent.title}</p>}
               </div>
-              <p className="text-gray-700">{milestone.description}</p>
+              <p className="text-gray-700 mb-4">{milestone.description}</p>
 
               {/* Transcript */}
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200 max-h-48 overflow-y-auto">
-                <h3 className="font-bold mb-2">Transcript</h3>
-                <p className="text-sm text-gray-700">{learnContent.transcript}</p>
+              <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200 max-h-32 md:max-h-48 overflow-y-auto">
+                <h3 className="font-bold mb-2 text-sm md:text-base">Transcript</h3>
+                <p className="text-xs md:text-sm text-gray-700">{currentContent.transcript}</p>
               </div>
 
               {/* Additional resources if available */}
-              {Object.keys(learnContent.additional_resources).length > 0 && (
+              {Object.keys(currentContent.additional_resources || {}).length > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <h3 className="font-bold mb-2">Additional Resources</h3>
+                  <h3 className="font-bold mb-2 text-sm md:text-base">Additional Resources</h3>
                   <ul className="list-disc pl-5">
-                    {Object.entries(learnContent.additional_resources).map(([key, value]) => (
-                      <li key={key} className="text-sm text-gray-700">
+                    {Object.entries(currentContent.additional_resources).map(([key, value]) => (
+                      <li key={key} className="text-xs md:text-sm text-gray-700">
                         <strong>{key}:</strong> {value}
                       </li>
                     ))}
@@ -265,12 +326,12 @@ const LearnPage = () => {
               )}
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-md flex items-center">
+            <div className="bg-white rounded-xl p-4 md:p-6 shadow-md flex items-center">
               <div className="flex-shrink-0 mr-4">
                 <img
-                  src="/images/speaking.gif"
+                  src="/images/ai-assistant.png"
                   alt="AI Assistant"
-                  className="w-16 h-16 rounded-full"
+                  className="w-12 h-12 md:w-16 md:h-16 rounded-full"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
                     target.src = "/placeholder.svg?height=80&width=80"
@@ -278,21 +339,42 @@ const LearnPage = () => {
                 />
               </div>
               <div>
-                <p className="text-gray-700">
-                  An exercise will follow after you press the next button to test your knowledge.
+                <p className="text-gray-700 text-sm md:text-base">
+                  {currentContentIndex < learnContents.length - 1
+                    ? "Watch all videos before proceeding to the coding exercise."
+                    : "An exercise will follow after you press the next button to test your knowledge."}
                 </p>
               </div>
-              <button
-                onClick={handleNextClick}
-                className={`ml-auto px-6 py-2 rounded-md transition-all duration-300 ${
-                  videoWatched || localVideoWatched
-                    ? "bg-[#10b3b3] hover:bg-[#0d9999] text-white"
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                }`}
-                disabled={!videoWatched && !localVideoWatched}
-              >
-                Next
-              </button>
+              <div className="ml-auto flex space-x-2">
+                {currentContentIndex > 0 && (
+                  <button
+                    onClick={handlePreviousClick}
+                    className="px-3 py-1 md:px-4 md:py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition-all duration-300 flex items-center text-xs md:text-sm"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </button>
+                )}
+                <button
+                  onClick={handleNextClick}
+                  className={`px-3 py-1 md:px-4 md:py-2 rounded-md transition-all duration-300 flex items-center text-xs md:text-sm ${
+                    videoWatched || localVideoWatched
+                      ? "bg-[#10b3b3] hover:bg-[#0d9999] text-white"
+                      : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  }`}
+                  disabled={!videoWatched && !localVideoWatched}
+                >
+                  {currentContentIndex < learnContents.length - 1 ? (
+                    <>
+                      Next Video <ChevronRight className="h-4 w-4 ml-1" />
+                    </>
+                  ) : (
+                    <>
+                      Next <ChevronRight className="h-4 w-4 ml-1" />
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -300,15 +382,15 @@ const LearnPage = () => {
         {/* Badge animation */}
         {showBadgeAnimation && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-            <div className="bg-white p-8 rounded-xl shadow-2xl">
+            <div className="bg-white p-6 md:p-8 rounded-xl shadow-2xl">
               <div className="text-center">
-                <Award className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-[#003366] mb-2">New Badge Earned!</h3>
-                <p className="text-lg text-gray-700 mb-4">First Step</p>
-                <p className="text-sm text-gray-600 mb-6">You've completed your first Python lesson!</p>
+                <Award className="h-12 w-12 md:h-16 md:w-16 text-yellow-500 mx-auto mb-4" />
+                <h3 className="text-xl md:text-2xl font-bold text-[#003366] mb-2">New Badge Earned!</h3>
+                <p className="text-base md:text-lg text-gray-700 mb-4">First Step</p>
+                <p className="text-xs md:text-sm text-gray-600 mb-6">You've completed your first Python lesson!</p>
                 <button
                   onClick={() => setShowBadgeAnimation(false)}
-                  className="bg-[#10b3b3] text-white px-6 py-2 rounded-lg hover:bg-[#0d9999]"
+                  className="bg-[#10b3b3] text-white px-4 md:px-6 py-2 rounded-lg hover:bg-[#0d9999]"
                 >
                   Awesome!
                 </button>
@@ -323,15 +405,15 @@ const LearnPage = () => {
               <img
                 src="/images/encouragement.gif"
                 alt="Great job!"
-                className="w-16 h-16 rounded-md mr-2"
+                className="w-12 h-12 md:w-16 md:h-16 rounded-md mr-2"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.src = "/placeholder.svg?height=80&width=80"
                 }}
               />
               <div>
-                <p className="font-bold text-[#003366]">Great job!</p>
-                <p className="text-sm text-gray-600">Keep going! You're doing amazing!</p>
+                <p className="font-bold text-[#003366] text-sm md:text-base">Great job!</p>
+                <p className="text-xs md:text-sm text-gray-600">Keep going! You're doing amazing!</p>
               </div>
             </div>
           </div>
