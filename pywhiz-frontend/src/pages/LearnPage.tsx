@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Play, Pause, Volume2, Maximize2, VolumeX, Award, ChevronLeft, ChevronRight } from "lucide-react"
+import { Play, Pause, Volume2, Maximize2, VolumeX, Award, ChevronLeft, ChevronRight, Headphones } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import confetti from "canvas-confetti"
 import { fetchLearnContent, fetchMilestones, type LearnContent, type Milestone } from "../services/learnApi"
@@ -25,6 +25,9 @@ const LearnPage = () => {
   const [error, setError] = useState<string | null>(null)
   const [localVideoWatched, setLocalVideoWatched] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false)
+  const [isAudioMuted, setIsAudioMuted] = useState(false)
 
   // Check if device is mobile
   useEffect(() => {
@@ -205,6 +208,35 @@ const LearnPage = () => {
 
   const currentContent = learnContents[currentContentIndex]
 
+  // Add audio player controls
+  const toggleAudioPlay = () => {
+    if (audioRef.current) {
+      if (isAudioPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play().catch((error) => {
+          console.error("Error playing audio:", error)
+        })
+      }
+      setIsAudioPlaying(!isAudioPlaying)
+    }
+  }
+
+  const toggleAudioMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isAudioMuted
+      setIsAudioMuted(!isAudioMuted)
+    }
+  }
+
+  // Reset audio player when changing content
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      setIsAudioPlaying(false)
+    }
+  }, [currentContentIndex])
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -244,7 +276,7 @@ const LearnPage = () => {
               <video
                 ref={videoRef}
                 className="w-full h-full object-cover"
-                poster="/images/video-thumbnail.jpg"
+                poster="/images/intro.jpeg"
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={handleLoadedMetadata}
                 onEnded={() => setVideoWatched(true)}
@@ -386,6 +418,42 @@ const LearnPage = () => {
             </div>
           </div>
         </div>
+
+        {/* Add this after the video player section */}
+        {currentContent.audio_url && (
+          <div className="mt-4 bg-white rounded-xl p-4 shadow-md">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Headphones className="h-5 w-5 text-[#10b3b3] mr-2" />
+                <h3 className="text-base font-semibold">Audio Lesson</h3>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={toggleAudioPlay}
+                  className="p-2 rounded-full bg-[#10b3b3] text-white hover:bg-[#0d9999]"
+                >
+                  {isAudioPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </button>
+                <button
+                  onClick={toggleAudioMute}
+                  className="p-2 rounded-full bg-gray-100 hover:bg-gray-200"
+                >
+                  {isAudioMuted ? (
+                    <VolumeX className="h-4 w-4 text-gray-600" />
+                  ) : (
+                    <Volume2 className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
+              </div>
+            </div>
+            <audio
+              ref={audioRef}
+              src={currentContent.audio_url}
+              className="hidden"
+              onEnded={() => setIsAudioPlaying(false)}
+            />
+          </div>
+        )}
 
         {/* Badge animation */}
         {showBadgeAnimation && (

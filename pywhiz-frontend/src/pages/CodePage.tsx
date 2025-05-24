@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Volume2, VolumeX, AlertCircle, CheckCircle, HelpCircle, Play, Pause, Maximize2, Video } from "lucide-react"
+import { Volume2, VolumeX, AlertCircle, CheckCircle, HelpCircle, Play, Pause, Maximize2, Video, Headphones } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import {
   fetchCodeQuestions,
@@ -21,6 +21,7 @@ const CodePage = () => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const explanationVideoRef = useRef<HTMLVideoElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   const [milestone, setMilestone] = useState<Milestone | null>(null)
   const [codeQuestions, setCodeQuestions] = useState<CodeQuestion[]>([])
@@ -49,6 +50,8 @@ const CodePage = () => {
   const [isMobile, setIsMobile] = useState(false)
   const [questionOutputs, setQuestionOutputs] = useState<Record<string, string>>({})
   const [pointsAwarded, setPointsAwarded] = useState<Record<string, boolean>>({})
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false)
+  const [isAudioMuted, setIsAudioMuted] = useState(false)
 
   // Check if device is mobile
   useEffect(() => {
@@ -360,6 +363,33 @@ const CodePage = () => {
     }
   }, [currentQuestionIndex, currentQuestion])
 
+  const toggleAudioPlay = () => {
+    if (audioRef.current) {
+      if (isAudioPlaying) {
+        audioRef.current.pause()
+      } else {
+        audioRef.current.play().catch((error) => {
+          console.error("Error playing audio:", error)
+        })
+      }
+      setIsAudioPlaying(!isAudioPlaying)
+    }
+  }
+
+  const toggleAudioMute = () => {
+    if (audioRef.current) {
+      audioRef.current.muted = !isAudioMuted
+      setIsAudioMuted(!isAudioMuted)
+    }
+  }
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+      setIsAudioPlaying(false)
+    }
+  }, [currentQuestionIndex])
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -445,6 +475,41 @@ const CodePage = () => {
                 ></div>
               </div>
 
+              {currentQuestion?.audio_url && (
+                <div className="mt-4 bg-white rounded-xl p-4 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Headphones className="h-5 w-5 text-[#10b3b3] mr-2" />
+                      <h3 className="text-base font-semibold">Audio Explanation</h3>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={toggleAudioPlay}
+                        className="p-2 rounded-full bg-[#10b3b3] text-white hover:bg-[#0d9999]"
+                      >
+                        {isAudioPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                      </button>
+                      <button
+                        onClick={toggleAudioMute}
+                        className="p-2 rounded-full bg-gray-100 hover:bg-gray-200"
+                      >
+                        {isAudioMuted ? (
+                          <VolumeX className="h-4 w-4 text-gray-600" />
+                        ) : (
+                          <Volume2 className="h-4 w-4 text-gray-600" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <audio
+                    ref={audioRef}
+                    src={currentQuestion.audio_url}
+                    className="hidden"
+                    onEnded={() => setIsAudioPlaying(false)}
+                  />
+                </div>
+              )}
+
               {currentQuestion?.hint && (
                 <div className="bg-yellow-50 p-3 md:p-4 rounded-lg border border-yellow-200 mb-4">
                   <h3 className="font-bold mb-2 text-sm md:text-base">Hint</h3>
@@ -499,7 +564,7 @@ const CodePage = () => {
                   <video
                     ref={videoRef}
                     className="w-full h-full object-cover"
-                    poster="/images/video-thumbnail.jpg"
+                    poster="/images/intro.jpeg"
                     onTimeUpdate={handleTimeUpdate}
                     onLoadedMetadata={handleLoadedMetadata}
                     onError={() => console.error("Video failed to load")}
@@ -650,6 +715,19 @@ John
               />
             </div>
 
+            {/* Move the Run button here, above the explanation video */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleRunCode}
+                disabled={isRunning}
+                className={`px-3 md:px-6 py-2 rounded-md transition-all duration-300 text-xs md:text-sm ${
+                  isRunning ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#10b3b3] hover:bg-[#0d9999] text-white"
+                }`}
+              >
+                {isRunning ? "Running..." : "Run"}
+              </button>
+            </div>
+
             {/* Explanation Video - Now shown by default */}
             {currentQuestion?.video_url_2 && (
               <div className="bg-white rounded-xl p-4 shadow-md">
@@ -662,7 +740,7 @@ John
                     <video
                       ref={explanationVideoRef}
                       className="w-full h-full object-cover"
-                      poster="/images/video-thumbnail.jpg"
+                      poster="/images/intro.jpeg"
                       onTimeUpdate={handleExplanationTimeUpdate}
                       onLoadedMetadata={handleExplanationLoadedMetadata}
                       onError={() => console.error("Explanation video failed to load")}
@@ -690,36 +768,11 @@ John
                       ></div>
                     </div>
                   </div>
-                  <div className="bg-[#003366] text-white p-2 md:p-3 flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <button onClick={toggleExplanationPlay}>
-                        {isExplanationPlaying ? (
-                          <Pause className="h-4 w-4 md:h-5 md:w-5" />
-                        ) : (
-                          <Play className="h-4 w-4 md:h-5 md:w-5" />
-                        )}
-                      </button>
-                      <span className="text-xs md:text-sm">
-                        {formatTime(explanationCurrentTime)} / {formatTime(explanationDuration || 0)}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2 md:space-x-3">
-                      <button onClick={toggleMute}>
-                        {isMuted ? (
-                          <VolumeX className="h-4 w-4 md:h-5 md:w-5" />
-                        ) : (
-                          <Volume2 className="h-4 w-4 md:h-5 md:w-5" />
-                        )}
-                      </button>
-                      <button onClick={handleExplanationFullscreen}>
-                        <Maximize2 className="h-4 w-4 md:h-5 md:w-5" />
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
 
+            {/* Previous and Next buttons below the explanation video */}
             <div className="flex justify-between">
               <button
                 onClick={() => {
@@ -732,16 +785,6 @@ John
                 className="px-3 md:px-6 py-2 bg-[#66cccc] hover:bg-[#55bbbb] text-white rounded-md transition-all duration-300 text-xs md:text-sm"
               >
                 {currentQuestionIndex === 0 ? "Previous" : "Previous Question"}
-              </button>
-
-              <button
-                onClick={handleRunCode}
-                disabled={isRunning}
-                className={`px-3 md:px-6 py-2 rounded-md transition-all duration-300 text-xs md:text-sm ${
-                  isRunning ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#10b3b3] hover:bg-[#0d9999] text-white"
-                }`}
-              >
-                {isRunning ? "Running..." : "Run"}
               </button>
 
               <button
