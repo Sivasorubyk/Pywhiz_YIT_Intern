@@ -274,12 +274,12 @@ const ExercisePage = () => {
             {milestone.title}
           </span>
 
-          <button onClick={() => navigate("/dashboard")} className="text-[#10b3b3] hover:text-[#0d9999] font-medium">
+          {/* <button onClick={() => navigate("/dashboard")} className="text-[#10b3b3] hover:text-[#0d9999] font-medium">
             Back to Dashboard
-          </button>
+          </button> */}
         </div>
 
-        <div className="flex justify-between items-start mb-4 md:mb-6">
+        {/* <div className="flex justify-between items-start mb-4 md:mb-6">
           <h1 className="text-xl md:text-2xl font-bold">{milestone.title} - Exercise</h1>
           {(milestoneAchieved || localMilestoneAchieved) && !isReviewMode && showResults && (
             <button onClick={handleReviewMode} className="text-blue-500 hover:text-blue-600 flex items-center text-sm">
@@ -287,7 +287,7 @@ const ExercisePage = () => {
               Practice Again
             </button>
           )}
-        </div>
+        </div> */}
 
         <div className="bg-[#e6f7f7] rounded-xl p-4 md:p-6 shadow-md mb-6 md:mb-8">
           <div className="flex items-center">

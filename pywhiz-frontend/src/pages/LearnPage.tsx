@@ -264,9 +264,9 @@ const LearnPage = () => {
             {milestone.title}
           </span>
 
-          <button onClick={() => navigate("/dashboard")} className="text-[#10b3b3] hover:text-[#0d9999] font-medium">
+          {/* <button onClick={() => navigate("/dashboard")} className="text-[#10b3b3] hover:text-[#0d9999] font-medium">
             Back to Dashboard
-          </button>
+          </button> */}
         </div>
 
         <div className="grid md:grid-cols-2 gap-4 md:gap-6">

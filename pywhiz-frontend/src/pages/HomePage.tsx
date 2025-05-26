@@ -35,43 +35,43 @@ const HomePage = () => {
   // Course topics with fun icons and descriptions
   const courseTopics = [
     {
-      title: "Python Basics",
-      description: "Learn the building blocks of Python programming!",
+      title: "Python Basic Concepts I",
+      description: "Learn the Introduction, Variable, Operators",
       image: "/images/1.jpeg",
       color: "bg-blue-100 border-blue-300",
       emoji: "🚀",
     },
     {
-      title: "Fun with Variables",
-      description: "Store and use data in your programs!",
+      title: "Python Basic Concepts II",
+      description: "If Else, Match, Loops, Functions, Arrays, Math",
       image: "/images/2.jpeg",
       color: "bg-green-100 border-green-300",
       emoji: "🧩",
     },
     {
-      title: "Loops & Games",
-      description: "Make things happen over and over again!",
+      title: "Python Basic Concepts III",
+      description: "Lists, Tuples, Sets, Dictionaries, File Handling",
       image: "/images/3.jpeg",
       color: "bg-purple-100 border-purple-300",
       emoji: "🎮",
     },
     {
-      title: "If Statements",
-      description: "Teach your program to make decisions!",
+      title: "Python Coding Practice",
+      description: "Learn Coding and its explanation in each milestone",
       image: "/images/4.jpeg",
       color: "bg-yellow-100 border-yellow-300",
       emoji: "🔍",
     },
     {
-      title: "Awesome Functions",
-      description: "Create your own special commands!",
+      title: "Python Exercise",
+      description: "Practice questions and Understand concepts",
       image: "/images/5.jpeg",
       color: "bg-pink-100 border-pink-300",
       emoji: "⚡",
     },
     {
-      title: "Cool Projects",
-      description: "Build amazing things with your new skills!",
+      title: "Personalized Exercises",
+      description: "Practice multi concepts in each questions",
       image: "/images/6.jpeg",
       color: "bg-teal-100 border-teal-300",
       emoji: "🏆",
@@ -80,29 +80,29 @@ const HomePage = () => {
 
   const faqs = [
     {
-      question: "What is PyWhiz?",
+      question: "PyWhiz என்றால் என்ன?",
       answer:
-        "PyWhiz is an interactive Python learning platform designed specifically for kids aged 11-15. It combines fun lessons with AI-powered assistance to make learning to code engaging and accessible.",
+        "PyWhiz என்பது 11-16 வயதுடைய மாணவர்களுக்காக பிரத்தியேகமாக  வடிவமைக்கப்பட்ட ஒரு interactive python கற்றல் தளமாகும். இது பாடங்களை video, coding and exercise என்ற அணுகுமுறையில் AI-உதவியுடன் இணைத்து coding கற்றலை ஈர்க்கக்கூடியதாகவும் அணுகக்கூடியதாகவும் ஆக்குகிறது.",
     },
     {
-      question: "Why choose us?",
+      question: "எங்களை ஏன் தேர்வு செய்ய வேண்டும்?",
       answer:
-        "We offer a unique approach to teaching Python with interactive lessons, real-time code execution, and personalized feedback. Our platform is designed specifically for young learners with age-appropriate content and engaging visuals.",
+        "Interactive பாடங்கள்,real-time code execution, and personalized feedback மூலம் pythonஐ  கற்பிப்பதற்கான ஒரு தனித்துவமான அணுகுமுறையை நாங்கள் வழங்குகிறோம். எங்கள் தளம் வயதுக்கு ஏற்ற உள்ளடக்கம் மற்றும் ஈர்க்கக்கூடிய காட்சிகளுடன் ஆரம்ப மாணவர்களுக்காக பிரத்தியேகமாக வடிவமைக்கப்பட்டுள்ளது.",
     },
     {
-      question: "Can anyone follow our application?",
+      question: "எங்கள் applicationஐ  யார் வேண்டுமானாலும்  பின்பற்ற முடியுமா?",
       answer:
-        "Yes! While PyWhiz is designed for kids aged 11-15, anyone interested in learning Python basics can benefit from our platform. The lessons are structured to be accessible to beginners of all ages.",
+        "ஆம்! PyWhiz 11-16 வயதுடைய மாணவர்களுக்காக வடிவமைக்கப்பட்டிருந்தாலும், python அடிப்படைகளைக் கற்றுக்கொள்ள ஆர்வமுள்ள எவரும் எங்கள் தளத்திலிருந்து பயனடையலாம். பாடங்கள் அனைத்து வயதினரும் அணுகக்கூடிய வகையில் கட்டமைக்கப்பட்டுள்ளன.",
     },
     {
-      question: "Why is it great for beginners?",
+      question: "ஆரம்பநிலையாளர்களுக்கு இது ஏன் சிறந்தது?",
       answer:
-        "PyWhiz breaks down complex programming concepts into simple, digestible lessons with visual aids and interactive exercises. Our step-by-step approach ensures that beginners can build confidence as they progress.",
+        "PyWhiz சிக்கலான coding கருத்துக்களை காட்சி உதவிகள் மற்றும் interactive பயிற்சிகள் மூலம் எளிமையாக , புரிந்துகொள்ளக்கூடிய வகையில் பாடங்களாகப் பிரிக்கிறது. தொடக்கநிலையாளர்கள் முன்னேறும்போது நம்பிக்கையை வளர்க்க முடியும் என்பதை எங்கள் படிப்படியான அணுகுமுறை உறுதி செய்கிறது.",
     },
     {
-      question: "Can I improve my Python skills here?",
+      question: "எனது python திறன்களை இங்கே மேம்படுத்த முடியுமா?",
       answer:
-        "PyWhiz offers progressive learning paths that start with the basics and gradually introduce more advanced concepts. Whether you're a complete beginner or looking to strengthen your fundamentals, our platform can help you grow.",
+        "PyWhiz அடிப்படைகளுடன் தொடங்கி படிப்படியாக மேம்பட்ட கருத்துக்களை அறிமுகப்படுத்தும் முற்போக்கான கற்றல் பாதைகளை வழங்குகிறது. நீங்கள் ஒரு முழுமையான தொடக்கநிலையாளராக இருந்தாலும் சரி அல்லது உங்கள் அடிப்படைகளை வலுப்படுத்த விரும்பினாலும் சரி, எங்கள் தளம் உங்களுக்கு வளர உதவும்.",
     },
   ]
 
@@ -112,11 +112,11 @@ const HomePage = () => {
       <section className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8 items-center">
           <div className="bg-white bg-opacity-90 p-8 rounded-xl shadow-md border-2 border-[#66cccc] transform transition-all duration-300 hover:scale-105">
-            <h1 className="text-4xl font-bold mb-4 text-[#003366]">Welcome to PyWhiz!</h1>
+            <h1 className="text-4xl font-bold mb-4 text-[#003366]">PyWhiz தளத்திற்கு வரவேற்கின்றோம்.</h1>
             <p className="text-gray-700 mb-6 text-lg">
               
             வணக்கம், எதிர்கால Coders! 👋 நீங்கள் 11-16 வயதுக்குட்பட்டவராக இருந்து, Python ஐ இலகுவாக புரிந்து கொண்டு கற்றுக்கொள்ள விரும்பினால், நீங்கள் சரியான இடத்தில் இருக்கிறீர்கள்! </p>
-            <p><center>🔍 Learn, 💻 Code , 🧠 Exercise and 🛠️ Build</center></p>
+            {/* <p><center>🔍 Learn, 💻 Code , 🧠 Exercise and 🛠️ Build</center></p> */}
             
             <button
               onClick={handleStartClick}
@@ -139,7 +139,7 @@ const HomePage = () => {
 
       {/* Course Cards */}
       <section className="container mx-auto px-4 py-12">
-        <h2 className="text-3xl font-bold text-center mb-8 text-[#003366]">What You'll Learn 🧠</h2>
+        <h2 className="text-3xl font-bold text-center mb-8 text-[#003366]">நீங்கள் என்ன கற்றுக்கொள்வீர்கள்? 🧠</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {courseTopics.map((topic, index) => (
             <div
@@ -168,7 +168,7 @@ const HomePage = () => {
       </section>
 
       {/* Video Demo - Simplified */}
-      <section className="container mx-auto px-4 py-12 bg-[#e6f7f7] rounded-3xl shadow-inner">
+      {/* <section className="container mx-auto px-4 py-12 bg-[#e6f7f7] rounded-3xl shadow-inner">
         <h2 className="text-3xl font-bold text-center mb-8 text-[#003366]">Watch How It Works! 📺</h2>
         <div className="max-w-4xl mx-auto rounded-xl overflow-hidden shadow-xl border-4 border-[#10b3b3]">
           <div className="relative aspect-w-16 aspect-h-9 bg-black">
@@ -178,11 +178,11 @@ const HomePage = () => {
             </video>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* FAQ Section */}
       <section className="container mx-auto px-4 py-12">
-        <h2 className="text-3xl font-bold text-center mb-8 text-[#003366]">Frequently Asked Questions 🤔</h2>
+        <h2 className="text-3xl font-bold text-center mb-8 text-[#003366]">அடிக்கடி கேட்கப்படும் கேள்விகள் 🤔</h2>
         <div className="max-w-5xl mx-auto">
           {faqs.map((faq, index) => (
             <div

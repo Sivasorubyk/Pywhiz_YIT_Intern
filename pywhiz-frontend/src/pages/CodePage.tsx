@@ -52,6 +52,7 @@ const CodePage = () => {
   const [pointsAwarded, setPointsAwarded] = useState<Record<string, boolean>>({})
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   const [isAudioMuted, setIsAudioMuted] = useState(false)
+  const [showExplanationVideo, setShowExplanationVideo] = useState(false)
 
   // Check if device is mobile
   useEffect(() => {
@@ -417,9 +418,9 @@ const CodePage = () => {
             {milestone.title}
           </span>
 
-          <button onClick={() => navigate("/dashboard")} className="text-[#10b3b3] hover:text-[#0d9999] font-medium">
+          {/* <button onClick={() => navigate("/dashboard")} className="text-[#10b3b3] hover:text-[#0d9999] font-medium">
             Back to Dashboard
-          </button>
+          </button> */}
         </div>
 
         <div className={`grid ${isMobile ? "grid-cols-1" : "md:grid-cols-2"} gap-4 md:gap-6`}>
@@ -532,7 +533,18 @@ const CodePage = () => {
                 </button>
               )}
 
-              <div className="flex items-center">
+              {/* Show Video button for explanation video moved here */}
+              {/* {currentQuestion?.video_url_2 && (
+                <button
+                  onClick={() => setShowExplanationVideo(!showExplanationVideo)}
+                  className="w-full mb-4 flex items-center justify-center bg-[#e6f7f7] hover:bg-[#d6f0f0] text-[#10b3b3] font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                >
+                  <Video className="h-4 w-4 mr-2" />
+                  {showExplanationVideo ? "Hide Explanation Video" : "Show Explanation Video"}
+                </button>
+              )} */}
+
+              {/* <div className="flex items-center">
                 <div className="flex-shrink-0 mr-4">
                   <img
                     src="/images/ai-assistant.png"
@@ -554,7 +566,7 @@ const CodePage = () => {
                     <Volume2 className="h-4 w-4 md:h-5 md:w-5 text-gray-600" />
                   )}
                 </button>
-              </div>
+              </div> */}
             </div>
 
             {/* Video Player (Collapsible) */}
@@ -621,19 +633,90 @@ const CodePage = () => {
               </div>
             )}
 
+            {/* Explanation Video - Now shown based on the new state */}
+            {/* {showExplanationVideo && currentQuestion?.video_url_2 && (
+              <div className="bg-white rounded-xl p-4 shadow-md">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-base md:text-lg font-semibold">Explanation Video</h3>
+                </div>
+
+                <div className="bg-[#003366] rounded-xl overflow-hidden shadow-lg mt-2">
+                  <div className="relative aspect-w-16 aspect-h-9 bg-black">
+                    <video
+                      ref={explanationVideoRef}
+                      className="w-full h-full object-cover"
+                      poster="/images/intro.jpeg"
+                      onTimeUpdate={handleExplanationTimeUpdate}
+                      onLoadedMetadata={handleExplanationLoadedMetadata}
+                      onError={() => console.error("Explanation video failed to load")}
+                    >
+                      <source src={currentQuestion.video_url_2} type="video/mp4" />
+                      Your browser does not support the video tag.
+                    </video>
+
+                    {!isExplanationPlaying && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <button
+                          onClick={toggleExplanationPlay}
+                          className="bg-white bg-opacity-80 rounded-full p-2 md:p-4 shadow-lg hover:bg-opacity-100 transition-all duration-300"
+                        >
+                          <Play className="h-6 w-6 md:h-8 md:w-8 text-[#003366]" />
+                        </button>
+                      </div>
+                    )} */}
+
+                    {/* Progress bar
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-800">
+                      <div
+                        className="h-full bg-[#10b3b3]"
+                        style={{ width: `${(explanationCurrentTime / (explanationDuration || 1)) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div> */}
+            {/* )} */}
+
+            
+          </div>
+
+          {/* Right Column - Code Editor */}
+          <div className="flex flex-col space-y-4">
+            <div className="bg-[#1e1e1e] rounded-xl p-3 md:p-4 shadow-md flex-grow">
+              <textarea
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                className="w-full h-full min-h-[250px] md:min-h-[300px] p-3 md:p-4 font-mono text-xs md:text-sm bg-black text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3] resize-none"
+                placeholder="Write your Python code here..."
+              />
+            </div>
+
+ {/* Move the Run button here */}
+ <div className="flex justify-end">
+              <button
+                onClick={handleRunCode}
+                disabled={isRunning}
+                className={`px-3 md:px-6 py-2 rounded-md transition-all duration-300 text-xs md:text-sm ${
+                  isRunning ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#10b3b3] hover:bg-[#0d9999] text-white"
+                }`}
+              >
+                {isRunning ? "Running..." : "Run"}
+              </button>
+            </div>
+
             <div className="bg-white rounded-xl p-4 md:p-6 shadow-md">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-base md:text-lg font-semibold">Output</h3>
-                <button
+                {/* <button
                   onClick={() => setShowInputHelp(!showInputHelp)}
                   className="flex items-center text-xs md:text-sm text-blue-600 hover:text-blue-800"
                 >
                   <HelpCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                   Help with Input
-                </button>
+                </button> */}
               </div>
 
-              {showInputHelp && (
+              {/* {showInputHelp && (
                 <div className="mb-4 p-2 md:p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg">
                   <h4 className="font-medium mb-1 text-xs md:text-sm">How to provide input:</h4>
                   <p className="text-xs mb-2">
@@ -651,7 +734,7 @@ John
                   </pre>
                   <p className="text-xs">Each line will be sent as a separate input in the order they appear.</p>
                 </div>
-              )}
+              )} */}
 
               {error && (
                 <div className="mb-4 p-2 md:p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-start">
@@ -674,7 +757,7 @@ John
                 </pre>
               </div>
 
-              <div className="mb-4">
+              {/* <div className="mb-4">
                 <label htmlFor="input" className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
                   Input (one per line):
                 </label>
@@ -686,7 +769,7 @@ John
                   placeholder="Enter inputs here...\nLine 1 = first input\nLine 2 = second input"
                   className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3] font-mono text-xs md:text-sm"
                 />
-              </div>
+              </div> */}
 
               {hints && (
                 <div className="mt-4">
@@ -702,34 +785,22 @@ John
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Right Column - Code Editor */}
-          <div className="flex flex-col space-y-4">
-            <div className="bg-[#1e1e1e] rounded-xl p-3 md:p-4 shadow-md flex-grow">
-              <textarea
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                className="w-full h-full min-h-[250px] md:min-h-[300px] p-3 md:p-4 font-mono text-xs md:text-sm bg-black text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3] resize-none"
-                placeholder="Write your Python code here..."
-              />
-            </div>
+           
 
-            {/* Move the Run button here, above the explanation video */}
-            <div className="flex justify-end">
-              <button
-                onClick={handleRunCode}
-                disabled={isRunning}
-                className={`px-3 md:px-6 py-2 rounded-md transition-all duration-300 text-xs md:text-sm ${
-                  isRunning ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#10b3b3] hover:bg-[#0d9999] text-white"
-                }`}
-              >
-                {isRunning ? "Running..." : "Run"}
-              </button>
-            </div>
-
-            {/* Explanation Video - Now shown by default */}
+            {/* Show Explanation Video button */}
             {currentQuestion?.video_url_2 && (
+              <button
+                onClick={() => setShowExplanationVideo(!showExplanationVideo)}
+                className="w-full mb-4 flex items-center justify-center bg-[#e6f7f7] hover:bg-[#d6f0f0] text-[#10b3b3] font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+              >
+                <Video className="h-4 w-4 mr-2" />
+                {showExplanationVideo ? "Hide Explanation Video" : "Show Explanation Video"}
+              </button>
+            )}
+
+            {/* Explanation Video - Now shown based on the new state */}
+            {showExplanationVideo && currentQuestion?.video_url_2 && (
               <div className="bg-white rounded-xl p-4 shadow-md">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-base md:text-lg font-semibold">Explanation Video</h3>
