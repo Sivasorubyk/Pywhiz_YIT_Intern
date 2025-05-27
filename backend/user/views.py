@@ -193,7 +193,7 @@ class CookieTokenRefreshView(TokenRefreshView):
 
         if not refresh_token:
             return Response(
-                {"detail": "Refresh token not found in cookies"},
+                {"detail": "Please log in again to continue."},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
@@ -206,6 +206,8 @@ class CookieTokenRefreshView(TokenRefreshView):
 
             if response.status_code == 200:
                 access_token = response.data.get('access')
+                new_refresh_token = response.data.get('refresh')
+                
                 response.set_cookie(
                     key='access_token',
                     value=access_token,
@@ -215,6 +217,17 @@ class CookieTokenRefreshView(TokenRefreshView):
                     max_age=int(settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds()),
                     path='/',
                 )
+                
+                if new_refresh_token:
+                    response.set_cookie(
+                        key='refresh_token',
+                        value=new_refresh_token,
+                        httponly=True,
+                        secure=not settings.DEBUG,
+                        samesite='Lax',
+                        max_age=int(settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds()),
+                        path='/',
+                    )
 
                 response.data.pop('access', None)
                 response.data.pop('refresh', None)
@@ -222,10 +235,8 @@ class CookieTokenRefreshView(TokenRefreshView):
             return response
 
         except Exception as e:
-            import traceback
-            traceback_str = traceback.format_exc()
-            print("🔴 Full traceback:\n", traceback_str)  # Logs to console
+            logger.error(f"Token refresh failed: {str(e)}")
             return Response(
-                {"detail": "Token refresh failed", "error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"detail": "Your session has expired. Please log in again."},
+                status=status.HTTP_401_UNAUTHORIZED
             )

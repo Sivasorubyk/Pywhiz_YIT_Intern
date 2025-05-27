@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'ckeditor',
     'user',
     'contact',
     # 'code_practice',
@@ -60,8 +61,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=24*7*60),  # Shorter for better security
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),  # Shorter for better security
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_REFRESH': 'refresh_token',
     'AUTH_COOKIE_SECURE': not DEBUG,
@@ -71,6 +72,8 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
+    'AUTH_COOKIE_PATH': '/',  # Explicit path
+    'AUTH_COOKIE_DOMAIN': None,  # Current domain only
 }
 
 ROOT_URLCONF = 'backend.urls'

@@ -5,18 +5,17 @@ import jwt
 from rest_framework_simplejwt.exceptions import InvalidToken
 
 class TokenRefreshMiddleware(MiddlewareMixin):
-    """
-    Middleware to check for near-expiring access tokens
-    and set a flag if they need refreshing.
-    """
     def process_request(self, request):
-        access_token = request.COOKIES.get('access_token')
+        # Skip middleware for token refresh endpoint
+        if request.path == '/api/token/refresh/':
+            return None
+            
+        access_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE'])
         
         if not access_token:
             return None
             
         try:
-            # Decode without verification to check expiration only
             payload = jwt.decode(
                 access_token,
                 settings.SECRET_KEY,
@@ -29,11 +28,11 @@ class TokenRefreshMiddleware(MiddlewareMixin):
                 exp_datetime = datetime.fromtimestamp(exp_timestamp)
                 now = datetime.now()
                 
-                # If token expires in less than 5 minutes, set flag
-                if exp_datetime - now < timedelta(minutes=5):
+                # If token expires in less than 15 minutes, set flag
+                if exp_datetime - now < timedelta(minutes=15):
                     request.should_refresh_token = True
                     
-        except (jwt.ExpiredSignatureError, InvalidToken):
+        except jwt.ExpiredSignatureError:
             request.should_refresh_token = True
         except jwt.InvalidTokenError:
             pass

@@ -347,14 +347,14 @@ const LearnPage = () => {
 
               {/* Transcript */}
               <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200 max-h-32 md:max-h-48 overflow-y-auto">
-                <h3 className="font-bold mb-2 text-sm md:text-base">Transcript</h3>
+                <h3 className="font-bold mb-2 text-sm md:text-base">குறிப்பு </h3>
                 <p className="text-xs md:text-sm text-gray-700">{currentContent.transcript}</p>
               </div>
 
               {/* Additional resources if available */}
-              {Object.keys(currentContent.additional_resources || {}).length > 0 && (
+              {/* {Object.keys(currentContent.additional_resources || {}).length > 0 && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <h3 className="font-bold mb-2 text-sm md:text-base">Additional Resources</h3>
+                  <h3 className="font-bold mb-2 text-sm md:text-base">மேலதிக தகவல்கள்</h3>
                   <ul className="list-disc pl-5">
                     {Object.entries(currentContent.additional_resources).map(([key, value]) => (
                       <li key={key} className="text-xs md:text-sm text-gray-700">
@@ -363,13 +363,13 @@ const LearnPage = () => {
                     ))}
                   </ul>
                 </div>
-              )}
+              )} */}
             </div>
 
             <div className="bg-white rounded-xl p-4 md:p-6 shadow-md flex items-center">
               <div className="flex-shrink-0 mr-4">
                 <img
-                  src="/images/ai-assistant.png"
+                  src="/images/speaking.gif"
                   alt="AI Assistant"
                   className="w-12 h-12 md:w-16 md:h-16 rounded-full"
                   onError={(e) => {
@@ -381,7 +381,7 @@ const LearnPage = () => {
               <div>
                 <p className="text-gray-700 text-sm md:text-base">
                   {currentContentIndex < learnContents.length - 1
-                    ? "Watch all videos before proceeding to the coding exercise."
+                    ? ""
                     : "An exercise will follow after you press the next button to test your knowledge."}
                 </p>
               </div>

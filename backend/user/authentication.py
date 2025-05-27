@@ -6,7 +6,10 @@ from datetime import datetime, timedelta
 
 class CookieJWTAuthentication(JWTAuthentication):
     def authenticate(self, request):
-        # Get tokens from cookies
+        # Skip for certain endpoints
+        if request.path in ['/api/token/refresh/', '/api/login/']:
+            return None
+            
         raw_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE'])
         raw_refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
         
@@ -15,23 +18,18 @@ class CookieJWTAuthentication(JWTAuthentication):
         
         try:
             if raw_token:
-                # Validate access token
                 validated_token = self.get_validated_token(raw_token)
                 user = self.get_user(validated_token)
                 return (user, validated_token)
-            
-            # If no access token but refresh token exists, let the view handle refresh
+                
             return None
             
         except InvalidToken as e:
-            # If access token is invalid, check if we should attempt refresh
             if raw_refresh_token:
-                # Check if token is expired (not just malformed)
                 try:
-                    AccessToken(raw_token, verify=False)  # Just to check expiration
-                    # If we get here, token is expired but otherwise valid
-                    return None  # Let the view handle refresh
+                    AccessToken(raw_token, verify=False)
+                    # Token is expired but refresh available
+                    return None
                 except Exception:
-                    # Token is malformed, not just expired
-                    raise AuthenticationFailed('Invalid token')
-            raise AuthenticationFailed('Invalid token')
+                    raise AuthenticationFailed('Your session is invalid. Please log in again.')
+            raise AuthenticationFailed('Please log in to continue.')

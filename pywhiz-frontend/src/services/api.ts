@@ -9,6 +9,25 @@ const api = axios.create({
   },
 })
 
+// Flag to prevent multiple refresh attempts
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (value?: any) => void
+  reject: (error?: any) => void
+}> = []
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) {
+      reject(error)
+    } else {
+      resolve(token)
+    }
+  })
+
+  failedQueue = []
+}
+
 // Add a request interceptor to include CSRF token if needed
 api.interceptors.request.use(
   (config) => {
@@ -35,23 +54,71 @@ api.interceptors.response.use(
 
     // If the error is due to an expired token (401) and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Skip refresh for login, register, and refresh endpoints
+      if (
+        originalRequest.url?.includes("/auth/login/") ||
+        originalRequest.url?.includes("/auth/register/") ||
+        originalRequest.url?.includes("/auth/token/refresh/") ||
+        originalRequest.url?.includes("/auth/verify-email/") ||
+        originalRequest.url?.includes("/auth/password-reset")
+      ) {
+        return Promise.reject(error)
+      }
+
+      if (isRefreshing) {
+        // If we're already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        })
+          .then(() => {
+            return api(originalRequest)
+          })
+          .catch((err) => {
+            return Promise.reject(err)
+          })
+      }
+
       originalRequest._retry = true
+      isRefreshing = true
 
       try {
         // Try to refresh the token
         await axios.post(
           `${import.meta.env.VITE_API_URL || "http://localhost:8000/api"}/auth/token/refresh/`,
           {},
-          { withCredentials: true },
+          {
+            withCredentials: true,
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+          },
         )
 
-        // If refresh successful, retry the original request
+        // If refresh successful, process the queue and retry the original request
+        processQueue(null, "success")
+        isRefreshing = false
+
         return api(originalRequest)
       } catch (refreshError) {
-        // If refresh fails, redirect to login (but avoid redirect loops)
-        if (!window.location.pathname.includes("/login")) {
+        // If refresh fails, process the queue with error and redirect to login
+        processQueue(refreshError, null)
+        isRefreshing = false
+
+        console.error("Token refresh failed:", refreshError)
+
+        // Only redirect if we're not already on login/auth pages
+        if (
+          !window.location.pathname.includes("/login") &&
+          !window.location.pathname.includes("/signup") &&
+          !window.location.pathname.includes("/verify-otp") &&
+          !window.location.pathname.includes("/forgot-password")
+        ) {
+          // Clear any stored auth state
+          localStorage.clear()
           window.location.href = "/login"
         }
+
         return Promise.reject(refreshError)
       }
     }

@@ -128,13 +128,13 @@ const SignupPage = () => {
                 </button>
               </form>
 
-              <div className="mt-6 flex justify-between text-sm">
+              <div className="mt-6 flex justify-center text-sm">
                 <Link to="/login" className="text-[#10b3b3] hover:underline">
                   Already have an account?
                 </Link>
-                <Link to="/forgot-password" className="text-[#10b3b3] hover:underline">
+                {/* <Link to="/forgot-password" className="text-[#10b3b3] hover:underline">
                   Forgot password?
-                </Link>
+                </Link> */}
               </div>
             </div>
 

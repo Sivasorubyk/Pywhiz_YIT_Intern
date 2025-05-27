@@ -31,6 +31,7 @@ interface AuthContextType {
   addScore: (points: number) => Promise<void>
   addBadge: (badge: string) => Promise<void>
   resetMilestoneProgress: (milestoneId: string) => Promise<void>
+  refreshAuth: () => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -39,7 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [refreshAttempted, setRefreshAttempted] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
 
   // Function to fetch user data
   const fetchUserData = async () => {
@@ -58,19 +59,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return true
     } catch (error) {
       console.error("Failed to fetch user data", error)
+      setUser(null)
+      setUserProgress(null)
       return false
     }
   }
 
-  // Function to refresh the access token using the refresh token
-  const refreshToken = async () => {
+  // Function to refresh authentication
+  const refreshAuth = async (): Promise<boolean> => {
     try {
-      // We don't need to send the refresh token in the request body
-      // because it's already in the cookies
-      await api.post("/auth/token/refresh/")
-      return true
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:8000/api"}/auth/token/refresh/`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        },
+      )
+
+      if (response.ok) {
+        // If refresh successful, fetch user data
+        return await fetchUserData()
+      } else {
+        console.error("Token refresh failed:", response.status, response.statusText)
+        setUser(null)
+        setUserProgress(null)
+        return false
+      }
     } catch (error) {
-      console.error("Failed to refresh token", error)
+      console.error("Token refresh error:", error)
+      setUser(null)
+      setUserProgress(null)
       return false
     }
   }
@@ -78,35 +100,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Check if user is already logged in
     const checkAuthStatus = async () => {
+      if (authChecked) return
+
       try {
-        // First try to get user data with current access token
+        // First try to get user data with current token
         const success = await fetchUserData()
 
-        if (success) {
-          setIsLoading(false)
-          return
-        }
-
-        // If that fails and we haven't tried refreshing yet, try to refresh the token
-        if (!refreshAttempted) {
-          setRefreshAttempted(true)
-          const refreshSuccess = await refreshToken()
-
-          if (refreshSuccess) {
-            // If refresh successful, try to get user data again
-            await fetchUserData()
-          }
+        if (!success) {
+          // If that fails, try to refresh the token
+          await refreshAuth()
         }
       } catch (error) {
         console.error("Auth check error:", error)
         setUser(null)
+        setUserProgress(null)
       } finally {
         setIsLoading(false)
+        setAuthChecked(true)
       }
     }
 
     checkAuthStatus()
-  }, [refreshAttempted])
+  }, [authChecked])
 
   const login = async (email: string, password: string) => {
     setIsLoading(true)
@@ -145,10 +160,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true)
     try {
       await api.post("/auth/logout/")
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
       setUser(null)
       setUserProgress(null)
-    } finally {
       setIsLoading(false)
+      // Clear any cached data
+      localStorage.clear()
     }
   }
 
@@ -328,6 +347,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         addScore,
         addBadge,
         resetMilestoneProgress,
+        refreshAuth,
       }}
     >
       {children}
