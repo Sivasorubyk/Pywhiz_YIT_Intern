@@ -184,8 +184,12 @@ class SubmitCodeView(APIView):
             # 🎯 6. Update progress
             if feedback["is_correct"]:
                 progress, _ = UserProgress.objects.get_or_create(user=user)
-                progress.score += 10
-                progress.save()
+                # Check if this is the first correct answer for this question
+                answer = UserCodeAnswer.objects.get(user=user, question=question)
+                if answer.attempts == 1:  # First attempt was correct
+                    progress.score += 10
+                    progress.save()           
+            
 
             return Response(UserCodeAnswerSerializer(answer).data)
 
