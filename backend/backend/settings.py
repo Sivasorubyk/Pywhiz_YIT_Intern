@@ -17,7 +17,8 @@ load_dotenv()
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = False #in prod
 # DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'  # Better debug handling
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '13.201.108.50','localhost,127.0.0.1').split(',')
+# ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '13.201.108.50','localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '13.201.108.50,localhost').split(',') if host.strip()]
 
 # Application definition
 INSTALLED_APPS = [
