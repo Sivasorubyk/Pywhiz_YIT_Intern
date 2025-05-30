@@ -27,15 +27,17 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 
 from googletrans import Translator
 
+from deep_translator import GoogleTranslator
+import logging
+
+logger = logging.getLogger(__name__)
+
 def translate_to_tamil(text):
     """Translate text to Tamil if it's not already in Tamil"""
     try:
-        translator = Translator()
-        detected_lang = translator.detect(text).lang
-        if detected_lang != 'ta':  # If not Tamil
-            translated = translator.translate(text, dest='ta')
-            return translated.text
-        return text
+        # Detect the source language (deep-translator does not support detection directly, so use English as fallback)
+        translated_text = GoogleTranslator(source='auto', target='ta').translate(text)
+        return translated_text
     except Exception as e:
         logger.error(f"Translation error: {str(e)}")
         return text  # Return original if translation fails
