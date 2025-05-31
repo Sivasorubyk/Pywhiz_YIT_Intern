@@ -10,7 +10,7 @@ import { fetchLearnContent, fetchMilestones, type LearnContent, type Milestone }
 const LearnPage = () => {
   const navigate = useNavigate()
   const { milestoneId } = useParams<{ milestoneId: string }>()
-  const { userProgress, updateUserProgress, markVideoWatched, isVideoWatched, resetMilestoneProgress } = useAuth()
+  const { markVideoWatched, isVideoWatched } = useAuth()
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [videoWatched, setVideoWatched] = useState(false)
@@ -24,7 +24,7 @@ const LearnPage = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [localVideoWatched, setLocalVideoWatched] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [, setIsMobile] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   const [isAudioMuted, setIsAudioMuted] = useState(false)

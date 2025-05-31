@@ -16,7 +16,7 @@ import {
 
 const CodePage = () => {
   const navigate = useNavigate()
-  const { userProgress, isCodeCompleted, markCodeCompleted } = useAuth()
+  const { isCodeCompleted, markCodeCompleted } = useAuth()
   const { milestoneId } = useParams()
   const videoRef = useRef<HTMLVideoElement>(null)
   const explanationVideoRef = useRef<HTMLVideoElement>(null)
@@ -207,13 +207,6 @@ const CodePage = () => {
     }
   }
 
-  const handleExplanationFullscreen = () => {
-    if (explanationVideoRef.current) {
-      if (explanationVideoRef.current.requestFullscreen) {
-        explanationVideoRef.current.requestFullscreen()
-      }
-    }
-  }
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60)
@@ -323,7 +316,6 @@ const CodePage = () => {
 
   const currentQuestion = codeQuestions[currentQuestionIndex] || null
 
-  const allQuestionsCompleted = codeQuestions.length > 0 && codeQuestions.every((q) => completedQuestions[q.id])
 
   useEffect(() => {
     if (currentQuestion) {

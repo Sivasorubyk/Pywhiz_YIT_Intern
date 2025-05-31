@@ -274,7 +274,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   // Function to add points to user's score
-  const addScore = async (points: number) => {
+  const addScore = async (_points: number) => {
     if (!user || !userProgress) return
 
     try {
@@ -288,7 +288,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   // Function to add a badge - this is now handled by the backend
-  const addBadge = async (badge: string) => {
+  const addBadge = async (_badge: string) => {
     // This is a placeholder - badges are now handled by the backend
     console.log("Badge system is now handled by the backend")
   }
