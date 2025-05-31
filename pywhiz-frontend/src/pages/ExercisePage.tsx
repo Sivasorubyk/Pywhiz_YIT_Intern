@@ -34,7 +34,7 @@ const ExercisePage = () => {
   const [isReviewMode, setIsReviewMode] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
+  const [, setIsMobile] = useState(false)
 
   // Check if device is mobile
   useEffect(() => {

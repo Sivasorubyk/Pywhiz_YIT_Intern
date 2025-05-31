@@ -8,7 +8,7 @@ import confetti from "canvas-confetti"
 import { fetchMilestones, type Milestone } from "../services/learnApi"
 
 const DashboardPage = () => {
-  const { user, userProgress, isAuthenticated, resetMilestoneProgress } = useAuth()
+  const { user, userProgress, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const [showConfetti, setShowConfetti] = useState(false)
   const [milestones, setMilestones] = useState<Milestone[]>([])

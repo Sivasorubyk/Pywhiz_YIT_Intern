@@ -28,7 +28,7 @@ const difficultyLabels = {
 
 const PersonalizedExercisePage = () => {
   const navigate = useNavigate()
-  const { user, userProgress } = useAuth()
+  const { userProgress } = useAuth()
 
   const [exercises, setExercises] = useState<PersonalizedExercise[]>([])
   const [selectedExercise, setSelectedExercise] = useState<PersonalizedExercise | null>(null)
@@ -47,7 +47,7 @@ const PersonalizedExercisePage = () => {
   const [newQuestion, setNewQuestion] = useState("")
   const [selectedDifficulty, setSelectedDifficulty] = useState<"easy" | "medium" | "hard">("easy")
   const [creating, setCreating] = useState(false)
-  const [isFirstAttempt, setIsFirstAttempt] = useState(false)
+  const [, setIsFirstAttempt] = useState(false)
   const [showDifficultySelection, setShowDifficultySelection] = useState(true)
   const [generatingExercise, setGeneratingExercise] = useState(false)
   const [waitingForInput, setWaitingForInput] = useState(false)
