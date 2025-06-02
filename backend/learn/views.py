@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
-from googletrans import Translator
+# from googletrans import Translator
 
 from deep_translator import GoogleTranslator
 import logging
