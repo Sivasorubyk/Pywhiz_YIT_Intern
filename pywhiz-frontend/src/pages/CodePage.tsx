@@ -469,44 +469,7 @@ const CodePage = () => {
                 ></div>
               </div>
 
-              {/* {currentQuestion?.audio_url && ( */}
-                {/* <div className="mb-4 bg-gray-50 rounded-xl p-3 md:p-4 shadow-sm"> */}
-                  {/* <div className="flex items-center justify-between"> */}
-                    {/* <div className="flex items-center"> */}
-                      {/* <Headphones className="h-4 w-4 md:h-5 md:w-5 text-[#10b3b3] mr-2" /> */}
-                      {/* <h3 className="text-sm md:text-base font-semibold">Audio Explanation</h3> */}
-                    {/* </div> */}
-                    {/* <div className="flex items-center space-x-2"> */}
-                      {/* <button */}
-                        {/* onClick={toggleAudioPlay} */}
-                        {/* className="p-1.5 md:p-2 rounded-full bg-[#10b3b3] text-white hover:bg-[#0d9999]" */}
-                      {/* > */}
-                        {/* {isAudioPlaying ? ( */}
-                          {/* <Pause className="h-3 w-3 md:h-4 md:w-4" /> */}
-                        {/* ) : ( */}
-                          {/* <Play className="h-3 w-3 md:h-4 md:w-4" /> */}
-                        {/* )} */}
-                      {/* </button> */}
-                      {/* <button */}
-                        {/* onClick={toggleAudioMute} */}
-                        {/* className="p-1.5 md:p-2 rounded-full bg-gray-100 hover:bg-gray-200" */}
-                      {/* > */}
-                        {/* {isAudioMuted ? ( */}
-                          {/* <VolumeX className="h-3 w-3 md:h-4 md:w-4 text-gray-600" /> */}
-                        {/* ) : ( */}
-                          {/* <Volume2 className="h-3 w-3 md:h-4 md:w-4 text-gray-600" /> */}
-                        {/* )} */}
-                      {/* </button> */}
-                    {/* </div> */}
-                  {/* </div> */}
-                  {/* <audio */}
-                    {/* ref={audioRef} */}
-                    {/* src={currentQuestion.audio_url} */}
-                    {/* className="hidden" */}
-                    {/* onEnded={() => setIsAudioPlaying(false)} */}
-                  {/* /> */}
-                {/* </div> */}
-              {/* )} */}
+              
 
               {currentQuestion?.hint && (
                 <div className="bg-yellow-50 p-3 md:p-4 rounded-lg border border-yellow-200 mb-4">
