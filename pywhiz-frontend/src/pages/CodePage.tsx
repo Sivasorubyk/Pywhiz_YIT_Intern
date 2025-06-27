@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { Volume2, VolumeX, AlertCircle, CheckCircle, Play, Pause, Maximize2, Video, Headphones } from "lucide-react"
+import { Volume2, VolumeX, AlertCircle, CheckCircle, Play, Pause, Maximize2, Video } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
 import {
   fetchCodeQuestions,
@@ -207,7 +207,6 @@ const CodePage = () => {
     }
   }
 
-
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60)
     const seconds = Math.floor(time % 60)
@@ -315,7 +314,6 @@ const CodePage = () => {
   }
 
   const currentQuestion = codeQuestions[currentQuestionIndex] || null
-
 
   useEffect(() => {
     if (currentQuestion) {
@@ -469,8 +467,6 @@ const CodePage = () => {
                 ></div>
               </div>
 
-              
-
               {currentQuestion?.hint && (
                 <div className="bg-yellow-50 p-3 md:p-4 rounded-lg border border-yellow-200 mb-4">
                   <h3 className="font-bold mb-2 text-sm md:text-base">Hint</h3>
@@ -561,30 +557,42 @@ const CodePage = () => {
           </div>
 
           {/* Right Column - Code Editor */}
-          <div className="flex flex-col h-full space-y-4">
-            <div className="bg-[#1e1e1e] rounded-xl p-3 md:p-4 shadow-md flex-1 min-h-0">
+          <div className="flex flex-col h-full space-y-3 sm:space-y-4">
+            {/* Code Editor Container with better responsive height */}
+            <div className="bg-[#1e1e1e] rounded-xl p-2 sm:p-3 md:p-4 shadow-md flex-1 min-h-0">
               <textarea
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="w-full h-full min-h-[200px] md:min-h-[250px] p-3 md:p-4 font-mono text-xs md:text-sm bg-black text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3] resize-none"
+                className="w-full h-full min-h-[180px] sm:min-h-[220px] md:min-h-[250px] lg:min-h-[300px] p-2 sm:p-3 md:p-4 font-mono text-xs sm:text-sm bg-black text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3] resize-none border-0"
                 placeholder="Write your Python code here..."
+                style={{ minHeight: "180px" }}
               />
             </div>
 
-            {/* Run button */}
-            <div className="flex justify-end">
+            {/* Run button with proper spacing to prevent overlap */}
+            <div className="flex justify-end mt-2 sm:mt-3">
               <button
                 onClick={handleRunCode}
                 disabled={isRunning}
-                className={`px-3 md:px-6 py-2 rounded-md transition-all duration-300 text-xs md:text-sm ${
-                  isRunning ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#10b3b3] hover:bg-[#0d9999] text-white"
+                className={`px-4 sm:px-6 md:px-8 py-2 sm:py-3 rounded-md transition-all duration-300 text-xs sm:text-sm md:text-base font-medium shadow-lg transform hover:scale-105 active:scale-95 ${
+                  isRunning
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-[#10b3b3] hover:bg-[#0d9999] text-white hover:shadow-xl"
                 }`}
               >
-                {isRunning ? "Running..." : "Run"}
+                {isRunning ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent mr-2"></div>
+                    Running...
+                  </div>
+                ) : (
+                  "Run Code"
+                )}
               </button>
             </div>
 
-            <div className="bg-white rounded-xl p-4 md:p-6 shadow-md flex-1 min-h-0">
+            {/* Output section with responsive spacing */}
+            <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-md flex-1 min-h-0">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-base md:text-lg font-semibold">Output</h3>
               </div>
