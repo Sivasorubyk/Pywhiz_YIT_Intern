@@ -557,27 +557,24 @@ const CodePage = () => {
           </div>
 
           {/* Right Column - Code Editor */}
-          <div className="flex flex-col h-full space-y-3 sm:space-y-4">
-            {/* Code Editor Container with better responsive height */}
-            <div className="bg-[#1e1e1e] rounded-xl p-2 sm:p-3 md:p-4 shadow-md flex-1 min-h-0">
+          <div className="flex flex-col h-full">
+            {/* Code Editor Container - Fixed height and spacing */}
+            <div className="bg-[#1e1e1e] rounded-xl p-2 sm:p-3 md:p-4 shadow-md mb-3 sm:mb-4">
               <textarea
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="w-full h-full min-h-[180px] sm:min-h-[220px] md:min-h-[250px] lg:min-h-[300px] p-2 sm:p-3 md:p-4 font-mono text-xs sm:text-sm bg-black text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3] resize-none border-0"
+                className="w-full h-48 sm:h-56 md:h-64 lg:h-72 p-2 sm:p-3 md:p-4 font-mono text-xs sm:text-sm bg-black text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3] resize-none border-0"
                 placeholder="Write your Python code here..."
-                style={{ minHeight: "180px" }}
               />
             </div>
 
-            {/* Run button with proper spacing to prevent overlap */}
-            <div className="flex justify-end mt-2 sm:mt-3">
+            {/* Run button with proper spacing */}
+            <div className="flex justify-end mb-4">
               <button
                 onClick={handleRunCode}
                 disabled={isRunning}
-                className={`px-4 sm:px-6 md:px-8 py-2 sm:py-3 rounded-md transition-all duration-300 text-xs sm:text-sm md:text-base font-medium shadow-lg transform hover:scale-105 active:scale-95 ${
-                  isRunning
-                    ? "bg-gray-400 text-white cursor-not-allowed"
-                    : "bg-[#10b3b3] hover:bg-[#0d9999] text-white hover:shadow-xl"
+                className={`px-4 sm:px-6 md:px-8 py-2 sm:py-3 rounded-md transition-all duration-300 text-xs sm:text-sm md:text-base font-medium shadow-lg ${
+                  isRunning ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#10b3b3] hover:bg-[#0d9999] text-white"
                 }`}
               >
                 {isRunning ? (
@@ -586,13 +583,13 @@ const CodePage = () => {
                     Running...
                   </div>
                 ) : (
-                  "Run Code"
+                  "Run"
                 )}
               </button>
             </div>
 
-            {/* Output section with responsive spacing */}
-            <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-md flex-1 min-h-0">
+            {/* Output section - rest remains the same */}
+            <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-md flex-1">
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-base md:text-lg font-semibold">Output</h3>
               </div>
