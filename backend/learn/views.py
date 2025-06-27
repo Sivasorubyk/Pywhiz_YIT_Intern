@@ -184,6 +184,10 @@ class SubmitCodeView(APIView):
             feedback["suggestions"] = translate_to_tamil(feedback["suggestions"])
 
             # 📝 5. Save to database
+            already_correct = UserCodeAnswer.objects.filter(
+                user=user, question=question, is_correct=True
+            ).exists()
+
             answer, _ = UserCodeAnswer.objects.update_or_create(
                 user=user,
                 question=question,
@@ -197,13 +201,10 @@ class SubmitCodeView(APIView):
             )
 
             # 🎯 6. Update progress
-            if feedback["is_correct"]:
+            if feedback["is_correct"] and not already_correct:
                 progress, _ = UserProgress.objects.get_or_create(user=user)
-                # Check if this is the first correct answer for this question
-                answer = UserCodeAnswer.objects.get(user=user, question=question)
-                if answer.attempts == 1:  # First attempt was correct
-                    progress.score += 10
-                    progress.save()           
+                progress.score += 10
+                progress.save()
             
 
             return Response(UserCodeAnswerSerializer(answer).data)
