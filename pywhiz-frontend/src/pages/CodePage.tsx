@@ -557,23 +557,25 @@ const CodePage = () => {
           </div>
 
           {/* Right Column - Code Editor */}
-          <div className="flex flex-col h-full">
-            {/* Code Editor Container - Fixed height and spacing */}
-            <div className="bg-[#1e1e1e] rounded-xl p-2 sm:p-3 md:p-4 shadow-md mb-3 sm:mb-4">
+          <div className="flex flex-col space-y-3">
+            {/* Code Editor Container - Mobile optimized */}
+            <div className="bg-[#1e1e1e] rounded-xl p-2 sm:p-3 md:p-4 shadow-md">
               <textarea
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="w-full h-48 sm:h-56 md:h-64 lg:h-72 p-2 sm:p-3 md:p-4 font-mono text-xs sm:text-sm bg-black text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3] resize-none border-0"
+                className={`w-full p-2 sm:p-3 md:p-4 font-mono text-xs sm:text-sm bg-black text-white rounded-md focus:outline-none focus:ring-2 focus:ring-[#10b3b3] resize-none border-0 ${
+                  isMobile ? "h-40" : "h-48 sm:h-56 md:h-64 lg:h-72"
+                }`}
                 placeholder="Write your Python code here..."
               />
             </div>
 
-            {/* Run button with proper spacing */}
-            <div className="flex justify-end mb-4">
+            {/* Run button - Mobile optimized spacing */}
+            <div className="flex justify-end">
               <button
                 onClick={handleRunCode}
                 disabled={isRunning}
-                className={`px-4 sm:px-6 md:px-8 py-2 sm:py-3 rounded-md transition-all duration-300 text-xs sm:text-sm md:text-base font-medium shadow-lg ${
+                className={`px-3 sm:px-6 md:px-8 py-2 sm:py-3 rounded-md transition-all duration-300 text-xs sm:text-sm md:text-base font-medium shadow-lg ${
                   isRunning ? "bg-gray-400 text-white cursor-not-allowed" : "bg-[#10b3b3] hover:bg-[#0d9999] text-white"
                 }`}
               >
@@ -588,41 +590,45 @@ const CodePage = () => {
               </button>
             </div>
 
-            {/* Output section - rest remains the same */}
-            <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-md flex-1">
+            {/* Output section - Mobile optimized */}
+            <div className="bg-white rounded-xl p-3 sm:p-4 md:p-6 shadow-md">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-base md:text-lg font-semibold">Output</h3>
+                <h3 className="text-sm sm:text-base md:text-lg font-semibold">Output</h3>
               </div>
 
               {error && (
-                <div className="mb-4 p-2 md:p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-start">
+                <div className="mb-3 p-2 md:p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-start">
                   <AlertCircle className="h-4 w-4 md:h-5 md:w-5 mr-2 mt-0.5 flex-shrink-0" />
                   <span className="text-xs md:text-sm">{error}</span>
                 </div>
               )}
 
               {isSuccess && (
-                <div className="mb-4 p-2 md:p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg flex items-start">
+                <div className="mb-3 p-2 md:p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg flex items-start">
                   <CheckCircle className="h-4 w-4 md:h-5 md:w-5 mr-2 mt-0.5 flex-shrink-0" />
                   <span className="text-xs md:text-sm">Code executed successfully!</span>
                 </div>
               )}
 
-              <div className="text-gray-700 mb-4 flex-1">
-                <pre className="bg-gray-100 p-2 md:p-3 rounded-md overflow-auto max-h-32 md:max-h-48 text-xs md:text-sm whitespace-pre-wrap">
+              <div className="text-gray-700 mb-3">
+                <pre
+                  className={`bg-gray-100 p-2 md:p-3 rounded-md overflow-auto text-xs md:text-sm whitespace-pre-wrap ${
+                    isMobile ? "max-h-24" : "max-h-32 md:max-h-48"
+                  }`}
+                >
                   {output || questionOutputs[currentQuestion?.id] || "Run your code to see the output here."}
                 </pre>
               </div>
 
               {hints && (
-                <div className="mt-4">
+                <div className="mt-3">
                   <h4 className="font-medium mb-1 text-xs md:text-sm">Hints:</h4>
                   <div className="bg-blue-50 p-2 md:p-3 rounded-md text-xs md:text-sm">{hints}</div>
                 </div>
               )}
 
               {suggestions && (
-                <div className="mt-4">
+                <div className="mt-3">
                   <h4 className="font-medium mb-1 text-xs md:text-sm">Suggestions:</h4>
                   <div className="bg-purple-50 p-2 md:p-3 rounded-md text-xs md:text-sm">{suggestions}</div>
                 </div>
@@ -685,7 +691,7 @@ const CodePage = () => {
             )}
 
             {/* Navigation buttons */}
-            <div className="flex justify-between pt-4">
+            <div className="flex justify-between pt-3">
               <button
                 onClick={() => {
                   if (currentQuestionIndex > 0) {
