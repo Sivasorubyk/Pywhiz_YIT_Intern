@@ -120,6 +120,18 @@ class SubmitCodeView(APIView):
                 f"Code:\n{user_code}\n\n"
                 f"Output:\n{stdout}\n\n"
                 f"Error:\n{stderr if stderr else 'None'}\n\n"
+                "IMPORTANT EVALUATION GUIDELINES:\n"
+                "1. Focus on the LOGICAL STRUCTURE and SYNTAX correctness, not specific content values\n"
+                "2. If the question asks for a print statement with personal information (names, schools, etc.), "
+                "the code is CORRECT if it:\n"
+                "   - Uses proper print() syntax\n"
+                "   - Contains appropriate personal details (even if different from examples)\n"
+                "   - Executes without errors\n"
+                "3. For mathematical/logical problems, verify the calculation logic is correct\n"
+                "4. For loops and conditionals, check if the structure and logic flow are proper\n"
+                "5. For function definitions, ensure proper syntax and parameter handling\n"
+                "6. Personalization of content (names, places, numbers) should be considered CORRECT "
+                "as long as the core programming concept is properly implemented\n\n"
                 "Analyze this code and determine if it correctly answers the question. "
                 "For code without output, check if it properly implements what was asked. "
                 "Respond in JSON with keys: output, hints, suggestions, is_correct. "
@@ -131,9 +143,10 @@ class SubmitCodeView(APIView):
                 messages=[
                     {
                         "role": "system", 
-                        "content": "You are a Python tutor. Analyze the code thoroughly, "
-                                  "even if it doesn't produce output. Check variable declarations, "
-                                  "function definitions, and overall structure."
+                        "content": "You are a Python tutor who evaluates code based on LOGICAL CORRECTNESS and SYNTAX, "
+                                  "not specific content values. Personalization of examples (names, places, etc.) "
+                                  "should be considered correct as long as the programming concept is properly implemented. "
+                                  "Focus on whether the student understands and applies the programming concept correctly."
                     },
                     {"role": "user", "content": prompt},
                 ],

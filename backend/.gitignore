@@ -7,3 +7,11 @@ venv/
 # Ignore environment variable file
 .env
 
+*.pyc
+# Ignore all .pyc files
+
+
+
+
+
+
