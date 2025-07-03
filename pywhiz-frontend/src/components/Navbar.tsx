@@ -78,7 +78,10 @@ const Navbar = () => {
               )}
             </div>
           ) : (
-            <Link to="/login" className="btn-primary">
+            <Link
+              to="/login"
+              className="nav-link px-4 py-2 bg-[#10b3b3] hover:bg-[#0d9999] rounded-full transition-all duration-300"
+            >
               Login
             </Link>
           )}
