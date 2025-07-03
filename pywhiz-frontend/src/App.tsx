@@ -46,6 +46,18 @@ function App() {
     }
   }, [user, userProgress])
 
+  // Track time spent on app session
+  useEffect(() => {
+    const startTime = Date.now()
+
+    return () => {
+      const durationMs = Date.now() - startTime
+      if (window.clarity) {
+        window.clarity('set', 'time_spent_ms', durationMs)
+      }
+    }
+  }, [])
+
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
