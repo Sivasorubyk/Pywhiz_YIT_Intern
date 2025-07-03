@@ -21,7 +21,7 @@ const CodePage = () => {
   const videoRef = useRef<HTMLVideoElement>(null)
   const explanationVideoRef = useRef<HTMLVideoElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  const audioRef = useRef<HTMLAudioElement>(null)
+  // const audioRef = useRef<HTMLAudioElement>(null)
 
   const [milestone, setMilestone] = useState<Milestone | null>(null)
   const [codeQuestions, setCodeQuestions] = useState<CodeQuestion[]>([])
@@ -50,8 +50,8 @@ const CodePage = () => {
   const [isMobile, setIsMobile] = useState(false)
   const [questionOutputs, setQuestionOutputs] = useState<Record<string, string>>({})
   const [pointsAwarded, setPointsAwarded] = useState<Record<string, boolean>>({})
-  const [isAudioPlaying, setIsAudioPlaying] = useState(false)
-  const [isAudioMuted, setIsAudioMuted] = useState(false)
+  // const [isAudioPlaying, setIsAudioPlaying] = useState(false)
+  // const [isAudioMuted, setIsAudioMuted] = useState(false)
   const [showExplanationVideo, setShowExplanationVideo] = useState(false)
 
   // Check if device is mobile
@@ -354,32 +354,32 @@ const CodePage = () => {
     }
   }, [currentQuestionIndex, currentQuestion])
 
-  const toggleAudioPlay = () => {
-    if (audioRef.current) {
-      if (isAudioPlaying) {
-        audioRef.current.pause()
-      } else {
-        audioRef.current.play().catch((error) => {
-          console.error("Error playing audio:", error)
-        })
-      }
-      setIsAudioPlaying(!isAudioPlaying)
-    }
-  }
+  // const toggleAudioPlay = () => {
+  //   if (audioRef.current) {
+  //     if (isAudioPlaying) {
+  //       audioRef.current.pause()
+  //     } else {
+  //       audioRef.current.play().catch((error) => {
+  //         console.error("Error playing audio:", error)
+  //       })
+  //     }
+  //     setIsAudioPlaying(!isAudioPlaying)
+  //   }
+  // }
 
-  const toggleAudioMute = () => {
-    if (audioRef.current) {
-      audioRef.current.muted = !isAudioMuted
-      setIsAudioMuted(!isAudioMuted)
-    }
-  }
+  // const toggleAudioMute = () => {
+  //   if (audioRef.current) {
+  //     audioRef.current.muted = !isAudioMuted
+  //     setIsAudioMuted(!isAudioMuted)
+  //   }
+  // }
 
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      setIsAudioPlaying(false)
-    }
-  }, [currentQuestionIndex])
+  // useEffect(() => {
+  //   if (audioRef.current) {
+  //     audioRef.current.pause()
+  //     setIsAudioPlaying(false)
+  //   }
+  // }, [currentQuestionIndex])
 
   if (isLoading) {
     return (
