@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'contact',
     # 'code_practice',
     'learn',
+    'subscriptions',
 
 ]
 

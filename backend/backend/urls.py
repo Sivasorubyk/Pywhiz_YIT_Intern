@@ -23,7 +23,8 @@ urlpatterns = [
     path('api/auth/', include('user.urls')),
     path('api/contact/', include('contact.urls')),
     path('api/learn/', include('learn.urls')),  # Changed from lesson to learn
+    # path('api/subscriptions/', include('subscriptions.urls')),
 ]
-    
+
    
 

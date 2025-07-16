@@ -10,9 +10,11 @@ const Navbar = () => {
   const location = useLocation()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isPolicyOpen, setIsPolicyOpen] = useState(false)
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
   const toggleProfile = () => setIsProfileOpen(!isProfileOpen)
+  const togglePolicy = () => setIsPolicyOpen(!isPolicyOpen)
 
   const isActive = (path: string) => location.pathname === path
 
@@ -51,9 +53,43 @@ const Navbar = () => {
           <Link to={getLearnLink()} className={`nav-link ${location.pathname.includes("/learn") ? "active" : ""}`}>
             Learn
           </Link>
-          <Link to="/contact" className={`nav-link ${isActive("/contact") ? "active" : ""}`}>
-            Contact
-          </Link>
+          <div className="relative">
+            <button
+              onClick={togglePolicy}
+              className={`nav-link flex items-center ${location.pathname.includes("/policy") ? "active" : ""}`}
+            >
+              Policy
+              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+
+            {isPolicyOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-10">
+                <Link
+                  to="/policy/return-policy"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setIsPolicyOpen(false)}
+                >
+                  Return Policy
+                </Link>
+                <Link
+                  to="/policy/privacy-policy"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setIsPolicyOpen(false)}
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  to="/policy/terms-conditions"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setIsPolicyOpen(false)}
+                >
+                  Business Terms & Conditions
+                </Link>
+              </div>
+            )}
+          </div>
 
           {isAuthenticated ? (
             <div className="relative">
@@ -116,6 +152,33 @@ const Navbar = () => {
             >
               Learn
             </Link>
+            <div className="space-y-2">
+              <div className="text-white font-medium">Policy</div>
+              <div className="pl-4 space-y-2">
+                <Link
+                  to="/policy/return-policy"
+                  className="block nav-link text-sm"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Return Policy
+                </Link>
+                <Link
+                  to="/policy/privacy-policy"
+                  className="block nav-link text-sm"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  to="/policy/terms-conditions"
+                  className="block nav-link text-sm"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Business Terms & Conditions
+                </Link>
+              </div>
+            </div>
+
             <Link
               to="/contact"
               className={`nav-link ${isActive("/contact") ? "active" : ""}`}

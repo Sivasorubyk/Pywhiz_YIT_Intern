@@ -16,6 +16,9 @@ import ExercisePage from "./pages/ExercisePage"
 import PersonalizedExercisePage from "./pages/PersonalizedExercisePage"
 import ContactPage from "./pages/ContactPage"
 import { useAuth } from "./contexts/AuthContext"
+import ReturnPolicyPage from "./pages/ReturnPolicyPage"
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage"
+import TermsConditionsPage from "./pages/TermsConditionsPage"
 
 const LearnRedirect = () => {
   const { userProgress, isAuthenticated } = useAuth()
@@ -53,7 +56,7 @@ function App() {
     return () => {
       const durationMs = Date.now() - startTime
       if (window.clarity) {
-        window.clarity('set', 'time_spent_ms', durationMs)
+        window.clarity("set", "time_spent_ms", durationMs)
       }
     }
   }, [])
@@ -68,6 +71,9 @@ function App() {
         <Route path="verify-otp" element={<VerifyOtpPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="contact" element={<ContactPage />} />
+        <Route path="policy/return-policy" element={<ReturnPolicyPage />} />
+        <Route path="policy/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="policy/terms-conditions" element={<TermsConditionsPage />} />
 
         {/* Protected routes */}
         <Route
