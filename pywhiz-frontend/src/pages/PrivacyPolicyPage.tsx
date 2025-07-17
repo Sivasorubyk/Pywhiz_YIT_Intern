@@ -12,12 +12,12 @@ const PrivacyPolicyPage = () => {
 
             <h2 className="text-2xl font-semibold text-[#10b3b3] mb-4">Information We Collect</h2>
             <p className="mb-4">
-              We collect information you provide directly to us, such as when you create an account, enroll in courses,
+              We collect information you provide directly to us, such as when you create an account, enroll in learning,
               or contact us for support.
             </p>
             <ul className="list-disc pl-6 mb-6 space-y-2">
               <li>Personal information (name, email address, age)</li>
-              <li>Learning progress and course completion data</li>
+              <li>Learning progress and learning completion data</li>
               <li>Device information and usage analytics</li>
               <li>Communication preferences</li>
             </ul>

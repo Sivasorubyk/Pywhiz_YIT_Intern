@@ -17,16 +17,16 @@ const ReturnPolicyPage = () => {
             <h2 className="text-2xl font-semibold text-[#10b3b3] mb-4">Refund Eligibility</h2>
             <ul className="list-disc pl-6 mb-6 space-y-2">
               <li>Refunds are available within 30 days of purchase</li>
-              <li>Technical issues that prevent access to course content</li>
+              <li>Technical issues that prevent access to learning content</li>
               <li>Duplicate purchases made in error</li>
-              <li>Course content significantly different from description</li>
+              <li>Learning content significantly different from description</li>
             </ul>
 
             <h2 className="text-2xl font-semibold text-[#10b3b3] mb-4">Non-Refundable Items</h2>
             <ul className="list-disc pl-6 mb-6 space-y-2">
-              <li>Courses completed more than 80% of the content</li>
+              <li>Learning completed more than 80% of the content</li>
               <li>Purchases made more than 30 days ago</li>
-              <li>Free courses or promotional content</li>
+              <li>Free Learning or promotional content</li>
               <li>Certificates and badges earned</li>
             </ul>
 

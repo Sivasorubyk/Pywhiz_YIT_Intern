@@ -48,7 +48,7 @@ const TermsConditionsPage = () => {
 
             <h2 className="text-2xl font-semibold text-[#10b3b3] mb-4">Content Ownership</h2>
             <p className="mb-6">
-              All course content, including videos, exercises, and materials, are the intellectual property of PyWhiz.
+              All learning content, including videos, exercises, and materials, are the intellectual property of PyWhiz.
               Users retain ownership of their created code and projects.
             </p>
 
