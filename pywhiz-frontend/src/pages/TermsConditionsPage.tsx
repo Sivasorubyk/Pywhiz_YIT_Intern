@@ -81,7 +81,7 @@ const TermsConditionsPage = () => {
               <p>
                 If you have any questions about these Terms & Conditions, please contact us at{" "}
                 <a href="mailto:legal@pywhiz.com" className="text-[#10b3b3] hover:underline">
-                  legal@pywhiz.com
+                pywhizkids@gmail.com
                 </a>
               </p>
             </div>

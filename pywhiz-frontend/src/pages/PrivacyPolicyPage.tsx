@@ -68,7 +68,7 @@ const PrivacyPolicyPage = () => {
               <p>
                 If you have questions about this Privacy Policy, please contact us at{" "}
                 <a href="mailto:privacy@pywhiz.com" className="text-[#10b3b3] hover:underline">
-                  privacy@pywhiz.com
+                pywhizkids@gmail.com
                 </a>
               </p>
             </div>

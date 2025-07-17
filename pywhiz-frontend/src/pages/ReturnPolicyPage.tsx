@@ -32,7 +32,7 @@ const ReturnPolicyPage = () => {
 
             <h2 className="text-2xl font-semibold text-[#10b3b3] mb-4">How to Request a Refund</h2>
             <ol className="list-decimal pl-6 mb-6 space-y-2">
-              <li>Contact our support team at support@pywhiz.com</li>
+              <li>Contact our support team at pywhizkids@gmail.com</li>
               <li>Provide your order number and reason for refund</li>
               <li>Allow 3-5 business days for review</li>
               <li>Refunds will be processed to the original payment method</li>
@@ -48,7 +48,7 @@ const ReturnPolicyPage = () => {
               <h3 className="font-semibold text-[#003366] mb-2">Need Help?</h3>
               <p>
                 If you have any questions about our return policy, please contact us at{" "}
-                <a href="mailto:support@pywhiz.com" className="text-[#10b3b3] hover:underline">
+                <a href="mailto:pywhizkids@gmail.com" className="text-[#10b3b3] hover:underline">
                   support@pywhiz.com
                 </a>
               </p>
