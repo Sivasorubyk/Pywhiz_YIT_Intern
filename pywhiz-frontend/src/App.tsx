@@ -15,6 +15,9 @@ import CodePage from "./pages/CodePage"
 import ExercisePage from "./pages/ExercisePage"
 import PersonalizedExercisePage from "./pages/PersonalizedExercisePage"
 import ContactPage from "./pages/ContactPage"
+import SubscriptionPage from "./pages/SubscriptionPage"
+import SubscriptionSuccessPage from "./pages/SubscriptionSuccessPage"
+import SubscriptionCancelPage from "./pages/SubscriptionCancelPage"
 import { useAuth } from "./contexts/AuthContext"
 import ReturnPolicyPage from "./pages/ReturnPolicyPage"
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage"
@@ -74,6 +77,11 @@ function App() {
         <Route path="policy/return-policy" element={<ReturnPolicyPage />} />
         <Route path="policy/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="policy/terms-conditions" element={<TermsConditionsPage />} />
+
+        {/* Subscription routes - now public */}
+        <Route path="subscription" element={<SubscriptionPage />} />
+        <Route path="subscription/success" element={<SubscriptionSuccessPage />} />
+        <Route path="subscription/cancel" element={<SubscriptionCancelPage />} />
 
         {/* Protected routes */}
         <Route

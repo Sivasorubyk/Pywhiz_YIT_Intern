@@ -180,6 +180,11 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# PayHere Settings
+PAYHERE_MERCHANT_ID = os.getenv('PAYHERE_MERCHANT_ID')
+PAYHERE_MERCHANT_SECRET = os.getenv('PAYHERE_MERCHANT_SECRET')
+PAYHERE_CHECKOUT_URL = os.getenv('PAYHERE_CHECKOUT_URL', 'https://sandbox.payhere.lk/pay/checkout')
+
 # Logging (Production)
 # LOGGING = {
 #     'version': 1,

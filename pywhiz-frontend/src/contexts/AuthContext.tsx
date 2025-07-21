@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import api from "../services/api"
 import { fetchUserProgress, updateCurrentMilestone, type UserProgress, type Milestone } from "../services/learnApi"
+import { fetchUserSubscription, type UserSubscription } from "../services/subscriptionApi"
 
 interface User {
   id: number
@@ -13,6 +14,7 @@ interface User {
 interface AuthContextType {
   user: User | null
   userProgress: UserProgress | null
+  userSubscription: UserSubscription | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
@@ -32,6 +34,7 @@ interface AuthContextType {
   addBadge: (badge: string) => Promise<void>
   resetMilestoneProgress: (milestoneId: string) => Promise<void>
   refreshAuth: () => Promise<boolean>
+  refreshSubscription: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -39,6 +42,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [userProgress, setUserProgress] = useState<UserProgress | null>(null)
+  const [userSubscription, setUserSubscription] = useState<UserSubscription | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [authChecked, setAuthChecked] = useState(false)
 
@@ -56,12 +60,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Failed to fetch user progress", progressError)
       }
 
+      // Fetch user subscription
+      try {
+        const subscription = await fetchUserSubscription()
+        setUserSubscription(subscription)
+      } catch (subscriptionError) {
+        console.error("Failed to fetch user subscription", subscriptionError)
+        setUserSubscription(null) // No active subscription
+      }
+
       return true
     } catch (error) {
       console.error("Failed to fetch user data", error)
       setUser(null)
       setUserProgress(null)
+      setUserSubscription(null)
       return false
+    }
+  }
+
+  // Function to refresh subscription data
+  const refreshSubscription = async () => {
+    if (!user) return
+
+    try {
+      const subscription = await fetchUserSubscription()
+      setUserSubscription(subscription)
+    } catch (error) {
+      console.error("Failed to refresh subscription", error)
+      setUserSubscription(null)
     }
   }
 
@@ -87,12 +114,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Token refresh failed:", response.status, response.statusText)
         setUser(null)
         setUserProgress(null)
+        setUserSubscription(null)
         return false
       }
     } catch (error) {
       console.error("Token refresh error:", error)
       setUser(null)
       setUserProgress(null)
+      setUserSubscription(null)
       return false
     }
   }
@@ -114,6 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Auth check error:", error)
         setUser(null)
         setUserProgress(null)
+        setUserSubscription(null)
       } finally {
         setIsLoading(false)
         setAuthChecked(true)
@@ -165,6 +195,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setUser(null)
       setUserProgress(null)
+      setUserSubscription(null)
       setIsLoading(false)
       // Clear any cached data
       localStorage.clear()
@@ -329,6 +360,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       value={{
         user,
         userProgress,
+        userSubscription,
         isAuthenticated: !!user,
         isLoading,
         login,
@@ -348,6 +380,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         addBadge,
         resetMilestoneProgress,
         refreshAuth,
+        refreshSubscription,
       }}
     >
       {children}

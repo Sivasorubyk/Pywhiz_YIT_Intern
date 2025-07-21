@@ -54,14 +54,19 @@ api.interceptors.response.use(
 
     // If the error is due to an expired token (401) and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Skip refresh for login, register, and refresh endpoints
-      if (
-        originalRequest.url?.includes("/auth/login/") ||
-        originalRequest.url?.includes("/auth/register/") ||
-        originalRequest.url?.includes("/auth/token/refresh/") ||
-        originalRequest.url?.includes("/auth/verify-email/") ||
-        originalRequest.url?.includes("/auth/password-reset")
-      ) {
+      // Skip refresh for public endpoints that don't require authentication
+      const publicEndpoints = [
+        "/auth/login/",
+        "/auth/register/",
+        "/auth/token/refresh/",
+        "/auth/verify-email/",
+        "/auth/password-reset",
+        "/subscriptions/plans/", // Allow subscription plans to be accessed publicly
+      ]
+
+      const isPublicEndpoint = publicEndpoints.some((endpoint) => originalRequest.url?.includes(endpoint))
+
+      if (isPublicEndpoint) {
         return Promise.reject(error)
       }
 
@@ -107,12 +112,13 @@ api.interceptors.response.use(
 
         console.error("Token refresh failed:", refreshError)
 
-        // Only redirect if we're not already on login/auth pages
+        // Only redirect if we're not already on login/auth pages OR subscription pages
         if (
           !window.location.pathname.includes("/login") &&
           !window.location.pathname.includes("/signup") &&
           !window.location.pathname.includes("/verify-otp") &&
-          !window.location.pathname.includes("/forgot-password")
+          !window.location.pathname.includes("/forgot-password") &&
+          !window.location.pathname.includes("/subscription") // Prevent redirect from subscription pages
         ) {
           // Clear any stored auth state
           localStorage.clear()
