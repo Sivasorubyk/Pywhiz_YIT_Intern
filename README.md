@@ -150,7 +150,8 @@ Private AWS-hosted milestone videos
 Deployed directly on AWS EC2 instance
 
 Once you complete you should able to see as follows: (Just for reference)
-https://drive.google.com/file/d/1I1AEgVpDTA6kqnRxs_VY3INriihEZXdP/view?usp=sharing
+
+Check out my project [here](https://drive.google.com/file/d/1I1AEgVpDTA6kqnRxs_VY3INriihEZXdP/view?usp=sharing)
 
 
 
